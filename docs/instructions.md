@@ -9,7 +9,7 @@ We'll also complete the secondary goal at the end, where we make an UI that will
 For now, the goal is just to the chain extensions. I'm just telling you the overall plan so you structure the repo in a way that makes sense for the final completed project.
 IMPORTANT goal is that it must be fully functioning and meet all the requirements (Preserve hashlock and timelock functionality for the non-EVM implementation, Swap functionality should be bidirectional, onchain execution of token transfers can be presented during the final demo)
 
-Let's start:
+Let's start with:
 1) Monad
 2) Tron
 3) Sui
