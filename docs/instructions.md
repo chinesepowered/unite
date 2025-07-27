@@ -14,4 +14,4 @@ Let's start with:
 2) Tron
 3) Sui
 
-We'll add other chains after but for now start with these 3. Make fully working. We want to use (basic working) relayer/resolver system but also allow for manual resolver for demo as a fallback.
+We'll add other chains after but for now start with these 3. Make fully working. We want to use (basic working for demo) relayer/resolver system but also allow for manual resolver for demo without the relayer/resolver.
