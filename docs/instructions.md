@@ -35,6 +35,7 @@ Let's start with:
 1) Monad
 2) Tron
 3) Sui
+4) Stellar
 
 We'll add other chains after but for now start with these 3. Make fully working. We want to use (basic working for demo, maybe polling or whatever is easiest to implement and demo) relayer/resolver system but also allow for manual resolver for demo without the relayer/resolver.
 
