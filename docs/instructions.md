@@ -7,11 +7,14 @@ We'll be completing multiple chains in this process, so structure repo in a way 
 We'll also complete the secondary goal at the end, where we make an UI that will leverage as many 1inch APIs as possible AND our newly created extensions.
 
 For now, the goal is just to the chain extensions. I'm just telling you the overall plan so you structure the repo in a way that makes sense for the final completed project.
-IMPORTANT goal is that it must be fully functioning and meet all the requirements (Preserve hashlock and timelock functionality for the non-EVM implementation, Swap functionality should be bidirectional, onchain execution of token transfers can be presented during the final demo)
+IMPORTANT goal is that it must be fully functioning and meet all the requirements (Preserve hashlock and timelock functionality for the non-EVM implementation, Swap functionality should be bidirectional, onchain execution of token transfers can be presented during the final demo).
+
+I'll provide the 1inch API key in a .env later
+Current repo is a blank nextjs template with app router for your convenience (in addition to these instructions in /docs). Feel free to remove and replace if this is not the best setup for this hackathon project and demo.
 
 Let's start with:
 1) Monad
 2) Tron
 3) Sui
 
-We'll add other chains after but for now start with these 3. Make fully working. We want to use (basic working for demo) relayer/resolver system but also allow for manual resolver for demo without the relayer/resolver.
+We'll add other chains after but for now start with these 3. Make fully working. We want to use (basic working for demo, maybe polling or whatever is easiest to implement and demo) relayer/resolver system but also allow for manual resolver for demo without the relayer/resolver.
