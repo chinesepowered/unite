@@ -421,4 +421,106 @@ contract HTLCEscrow is ReentrancyGuard, Ownable {
         
         emit EscrowCancelled(escrowId, escrow.sender, escrow.orderId);
     }
+
+    /**
+     * @dev Create multiple HTLC escrows for partial fills (native MON)
+     * @param amounts Array of amounts for each partial escrow
+     * @param secretHashes Array of secret hashes for each partial escrow
+     * @param timelock Unix timestamp when refund becomes available
+     * @param receiver Address that can withdraw with secrets
+     * @param baseOrderId Base order ID (will be suffixed with part number)
+     * @return escrowIds Array of unique identifiers for each escrow
+     */
+    function createPartialHTLCEscrowsMON(
+        uint256[] memory amounts,
+        bytes32[] memory secretHashes,
+        uint256 timelock,
+        address payable receiver,
+        string memory baseOrderId
+    ) external payable nonReentrant returns (bytes32[] memory) {
+        if (amounts.length != secretHashes.length) revert InvalidAmount();
+        if (amounts.length == 0) revert InvalidAmount();
+        if (timelock <= block.timestamp) revert TimelockMustBeFuture();
+        if (receiver == address(0)) revert InvalidAddress();
+        if (bytes(baseOrderId).length == 0) revert InvalidAmount();
+        
+        // Verify total amount matches msg.value
+        uint256 totalAmount = 0;
+        for (uint256 i = 0; i < amounts.length; i++) {
+            if (amounts[i] == 0) revert InvalidAmount();
+            totalAmount += amounts[i];
+        }
+        if (totalAmount != msg.value) revert InvalidAmount();
+        
+        bytes32[] memory escrowIds = new bytes32[](amounts.length);
+        
+        for (uint256 i = 0; i < amounts.length; i++) {
+            string memory partOrderId = string(abi.encodePacked(baseOrderId, "_", _toString(i + 1)));
+            
+            bytes32 escrowId = keccak256(abi.encodePacked(
+                msg.sender,
+                receiver,
+                secretHashes[i],
+                timelock,
+                partOrderId,
+                block.timestamp,
+                amounts[i],
+                i // Add index for uniqueness
+            ));
+            
+            if (escrows[escrowId].amount != 0) revert EscrowAlreadyExists();
+            if (orderToEscrowId[partOrderId] != bytes32(0)) revert OrderIdAlreadyUsed();
+            
+            escrows[escrowId] = Escrow({
+                sender: payable(msg.sender),
+                receiver: receiver,
+                amount: amounts[i],
+                secretHash: secretHashes[i],
+                timelock: timelock,
+                withdrawn: false,
+                cancelled: false,
+                tokenAddress: address(0),
+                orderId: partOrderId,
+                createdAt: block.timestamp
+            });
+            
+            orderToEscrowId[partOrderId] = escrowId;
+            escrowIds[i] = escrowId;
+            
+            emit EscrowCreated(
+                escrowId,
+                msg.sender,
+                receiver,
+                amounts[i],
+                secretHashes[i],
+                timelock,
+                address(0),
+                partOrderId
+            );
+        }
+        
+        return escrowIds;
+    }
+
+    /**
+     * @dev Helper function to convert uint to string
+     */
+    function _toString(uint256 value) internal pure returns (string memory) {
+        if (value == 0) {
+            return "0";
+        }
+        uint256 temp = value;
+        uint256 digits;
+        while (temp != 0) {
+            digits++;
+            temp /= 10;
+        }
+        bytes memory buffer = new bytes(digits);
+        while (value != 0) {
+            digits -= 1;
+            buffer[digits] = bytes1(uint8(48 + uint256(value % 10)));
+            value /= 10;
+        }
+        return string(buffer);
+    }
 }

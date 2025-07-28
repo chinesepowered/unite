@@ -37,6 +37,19 @@ export interface SwapOrder {
     src: bigint;
     dst: bigint;
   };
+  // Partial fills support
+  isPartialFill?: boolean;
+  partialFills?: PartialFill[];
+}
+
+export interface PartialFill {
+  partId: string;
+  amount: bigint;
+  secretHash: string;
+  secret?: string;
+  escrowId?: string;
+  withdrawn: boolean;
+  cancelled: boolean;
 }
 
 export interface EscrowDetails {
@@ -51,6 +64,12 @@ export interface SwapResult {
   dstEscrow?: EscrowDetails;
   txHash?: string;
   error?: string;
+  // Partial fills support
+  partialResults?: Array<{
+    partId: string;
+    success: boolean;
+    error?: string;
+  }>;
 }
 
 export abstract class ChainAdapter {
@@ -66,6 +85,10 @@ export abstract class ChainAdapter {
   abstract getBalance(address: string, tokenAddress: string): Promise<bigint>;
   abstract getBlockTimestamp(): Promise<bigint>;
   abstract isChainSupported(): boolean;
+  
+  // Optional partial fills support
+  deployPartialEscrows?(order: SwapOrder, side: 'src' | 'dst'): Promise<EscrowDetails[]>;
+  withdrawPartial?(escrow: EscrowDetails, secret: string): Promise<string>;
 }
 
 export enum SwapStatus {
