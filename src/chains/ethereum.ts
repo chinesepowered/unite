@@ -5,7 +5,6 @@ import { ChainAdapter, ChainConfig, SwapOrder, EscrowDetails } from '../core/typ
 export class EthereumAdapter extends ChainAdapter {
   private provider: JsonRpcProvider;
   private wallet?: Wallet;
-  private escrowFactory?: any;
 
   constructor(config: ChainConfig, privateKey?: string) {
     super(config);
@@ -29,7 +28,7 @@ export class EthereumAdapter extends ChainAdapter {
       if (side === 'src') {
         // Deploy source escrow using 1inch SDK patterns
         const escrowFactoryAddress = new Sdk.Address(this.config.escrowFactory);
-        const factory = new Sdk.EscrowFactory(escrowFactoryAddress);
+        const factory = new Sdk.ESCROW_FACTORY(escrowFactoryAddress);
         
         // Create immutables for source escrow
         const immutables = {
@@ -95,10 +94,10 @@ export class EthereumAdapter extends ChainAdapter {
           { value: order.safetyDeposit.dst }
         );
 
-        const receipt = await tx.wait();
+        await tx.wait();
         
         // Calculate destination escrow address
-        const factory = new Sdk.EscrowFactory(new Sdk.Address(this.config.escrowFactory));
+        const factory = new Sdk.ESCROW_FACTORY(new Sdk.Address(this.config.escrowFactory));
         const dstEscrowAddress = factory.getDstEscrowAddress(
           immutables,
           immutables,
@@ -114,7 +113,7 @@ export class EthereumAdapter extends ChainAdapter {
         };
       }
     } catch (error) {
-      throw new Error(`Failed to deploy ${side} escrow: ${error.message}`);
+      throw new Error(`Failed to deploy ${side} escrow: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -135,7 +134,7 @@ export class EthereumAdapter extends ChainAdapter {
       
       return receipt.hash;
     } catch (error) {
-      throw new Error(`Failed to withdraw from escrow: ${error.message}`);
+      throw new Error(`Failed to withdraw from escrow: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -156,7 +155,7 @@ export class EthereumAdapter extends ChainAdapter {
       
       return receipt.hash;
     } catch (error) {
-      throw new Error(`Failed to cancel escrow: ${error.message}`);
+      throw new Error(`Failed to cancel escrow: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 

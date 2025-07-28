@@ -56,25 +56,75 @@ cp .env.example .env
 Edit `.env` with your configuration:
 
 ```bash
-# Ethereum
-ETH_RPC_URL=https://eth.merkle.io
-ETH_PRIVATE_KEY=0x...
+# Ethereum Sepolia Testnet
+ETH_RPC_URL=https://sepolia.infura.io/v3/YOUR_INFURA_KEY
+ETH_PRIVATE_KEY=0x... # Your Ethereum private key
+ETH_ESCROW_FACTORY=0x7F3A34991C61963678676f4094596fAcbf7ea3f6 # 1inch factory
 
-# Monad (EVM-compatible)
-MONAD_RPC_URL=https://monad-testnet-rpc.com
-MONAD_PRIVATE_KEY=0x...
+# Monad Testnet (EVM-compatible)
+MONAD_RPC_URL=https://testnet-rpc.monad.xyz
+MONAD_PRIVATE_KEY=0x... # Your Monad private key
 
-# Stellar
+# Stellar Testnet
 STELLAR_RPC_URL=https://horizon-testnet.stellar.org
-STELLAR_SECRET_KEY=S...
+STELLAR_PRIVATE_KEY=S... # Stellar secret key format (starts with S)
 
-# Sui
+# Sui Testnet
 SUI_RPC_URL=https://fullnode.testnet.sui.io:443
-SUI_PRIVATE_KEY=suiprivkey...
+SUI_PRIVATE_KEY=0x... # Sui private key
 
-# Tron
+# Tron Shasta Testnet
 TRON_RPC_URL=https://api.shasta.trongrid.io
-TRON_PRIVATE_KEY=0x...
+TRON_PRIVATE_KEY=0x... # Tron private key
+```
+
+## 🧪 Testnet Setup Guide
+
+### Getting Testnet Tokens
+
+#### 1. Ethereum Sepolia
+- **Faucet**: https://faucets.chain.link/sepolia
+- **Alternative**: https://sepolia-faucet.pk910.de/
+- **Required**: ~0.1 ETH for testing swaps
+- **1inch Integration**: Uses existing Sepolia deployment
+
+#### 2. Monad Testnet
+- **Faucet**: https://testnet-faucet.monad.xyz
+- **Required**: ~10 MON for gas and testing
+- **HTLC Contracts**: Need to deploy custom contracts
+- **RPC**: May require waitlist access
+
+#### 3. Stellar Testnet
+- **Account Creation**: https://laboratory.stellar.org/#account-creator
+- **Friendbot Faucet**: https://friendbot.stellar.org
+- **Required**: 10,000 XLM (free from faucet)
+- **Format**: Use Stellar Laboratory to generate keypairs
+
+#### 4. Sui Testnet
+- **Discord Faucet**: https://discord.gg/sui (request in #devnet-faucet)
+- **CLI Faucet**: `sui client faucet` (after installing Sui CLI)
+- **Required**: ~1 SUI for testing
+- **Setup**: Install Sui CLI for key management
+
+#### 5. Tron Shasta Testnet
+- **Faucet**: https://www.trongrid.io/shasta
+- **Required**: ~1000 TRX for testing
+- **Energy**: May need additional energy for contract calls
+- **Backup Faucet**: https://shasta.tronex.io/
+
+### Account Setup Steps
+
+```bash
+# 1. Generate keys for each chain (or use existing)
+# 2. Fund accounts with testnet tokens
+# 3. Deploy HTLC contracts (for non-Ethereum chains)
+pnpm deploy:contracts
+
+# 4. Verify deployment
+pnpm test:integration
+
+# 5. Start development
+pnpm dev
 ```
 
 ### Running the Application
@@ -190,6 +240,58 @@ pnpm test:integration
 - **Replay Protection** - Each swap uses unique order ID
 - **Emergency Recovery** - Owner-controlled fallback after extended timeouts
 
+## 🧩 Partial Fills Implementation
+
+### Current Status
+- ✅ **Ethereum**: Native support via 1inch Merkle tree architecture
+- 🔶 **Other Chains**: All-or-nothing HTLCs (enhancement ready)
+
+### Implementation Options
+
+#### Option A: Multiple HTLCs (Simple)
+```solidity
+// Create multiple smaller HTLCs instead of one large order
+createHTLCEscrow(secretHash1, amount1, timelock, receiver, orderId_1);
+createHTLCEscrow(secretHash2, amount2, timelock, receiver, orderId_2);
+// Each HTLC can be filled independently
+```
+
+#### Option B: Merkle Tree HTLCs (Advanced)
+```solidity
+struct PartialEscrow {
+    uint256 totalAmount;
+    uint256 remainingAmount;
+    bytes32 merkleRoot;        // Root of secrets tree
+    mapping(bytes32 => bool) usedSecrets;
+}
+
+function partialWithdraw(
+    bytes32 escrowId,
+    uint256 amount,
+    bytes32 secret,
+    bytes32[] calldata merkleProof
+) external {
+    // Verify secret is in Merkle tree
+    // Verify amount doesn't exceed remaining
+    // Transfer partial amount
+}
+```
+
+### Implementation Complexity
+- **Monad/Tron**: 🟡 Medium (EVM-compatible, can adapt 1inch patterns)
+- **Stellar**: 🔴 Hard (Limited Merkle tree support, requires custom logic)
+- **Sui**: 🟡 Medium (Move vectors can handle tree operations)
+
+### Getting Started with Partial Fills
+```bash
+# 1. Start with Option A for quick implementation
+# 2. Test with multiple small HTLCs
+# 3. Upgrade to Merkle tree version for gas optimization
+
+# Example: Split 1 ETH order into 4 x 0.25 ETH HTLCs
+pnpm run create-partial-order --amount=1000000000000000000 --parts=4
+```
+
 ## 📋 Swap Flow
 
 1. **Create Order** - User specifies swap parameters
@@ -209,7 +311,7 @@ pnpm test:integration
 ### Stretch Goals
 🔶 **Partial fills** - Architecture supports, implementation pending  
 🔶 **Relayer/resolver** - Basic resolver implemented  
-🔶 **UI** - REST API ready for frontend integration  
+🔶 **UI** - Complete React UI with real-time tracking  
 
 ## 🛠️ Development
 
@@ -242,10 +344,66 @@ curl -L https://foundry.paradigm.xyz | bash
 forge install
 
 # Compile contracts
-forge build
+pnpm forge:build
 
 # Run contract tests
-forge test
+pnpm forge:test
+
+# Deploy contracts to testnets
+pnpm deploy:contracts
+```
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+#### 1. RPC Connection Errors
+```bash
+# Check if RPC endpoints are accessible
+curl -X POST https://sepolia.infura.io/v3/YOUR_KEY \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}'
+```
+
+#### 2. Insufficient Testnet Funds
+- Ensure all accounts have sufficient native tokens for gas
+- Check token balances match the swap amounts
+- Use multiple faucets if daily limits are exceeded
+
+#### 3. Contract Deployment Issues
+```bash
+# Check if contracts are properly deployed
+pnpm check-deployments
+
+# Manually deploy specific chain
+pnpm deploy:contracts --chain=monad
+```
+
+#### 4. Swap Execution Failures
+- Verify secret hash matches across chains
+- Check timelock hasn't expired
+- Ensure proper token approvals for ERC20 swaps
+
+#### 5. HTLC Test Failures
+```bash
+# Run comprehensive HTLC compliance tests
+pnpm forge:test --match-test "HTLC*"
+
+# Check specific security features
+pnpm forge:test --match-test "testHashlock*"
+pnpm forge:test --match-test "testTimelock*"
+```
+
+### Quick Verification
+```bash
+# Health check all components
+curl http://localhost:3000/health
+curl http://localhost:3000/api/chains
+
+# Test demo swap
+curl -X POST http://localhost:3000/api/demo/swap \
+  -H "Content-Type: application/json" \
+  -d '{"srcChain":"ethereum","dstChain":"stellar"}'
 ```
 
 ## 🏆 Demo
