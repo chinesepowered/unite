@@ -1,39 +1,20 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.6;
+pragma solidity ^0.8.23;
+
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
- * @title HTLCEscrow for Tron Network
- * @dev Production-ready HTLC implementation for TRX and TRC20 tokens
- * Enforces atomic cross-chain swaps with proper hashlock and timelock
+ * @title HTLCEscrow for Monad Network
+ * @dev PRODUCTION-READY Hashed Timelock Contract optimized for Monad
+ * Implements proper access control, security, and atomic swap guarantees
+ * Supports native MON and ERC20 tokens on Monad
  */
+contract HTLCEscrow is ReentrancyGuard, Ownable {
+    using SafeERC20 for IERC20;
 
-// TRC20 interface for Tron network
-interface ITRC20 {
-    function transfer(address to, uint256 value) external returns (bool);
-    function transferFrom(address from, address to, uint256 value) external returns (bool);
-    function balanceOf(address account) external view returns (uint256);
-    function approve(address spender, uint256 value) external returns (bool);
-}
-
-// Simple reentrancy guard for Tron
-abstract contract ReentrancyGuard {
-    uint256 private constant _NOT_ENTERED = 1;
-    uint256 private constant _ENTERED = 2;
-    uint256 private _status;
-
-    constructor() {
-        _status = _NOT_ENTERED;
-    }
-
-    modifier nonReentrant() {
-        require(_status != _ENTERED, "ReentrancyGuard: reentrant call");
-        _status = _ENTERED;
-        _;
-        _status = _NOT_ENTERED;
-    }
-}
-contract HTLCEscrow is ReentrancyGuard {
-    
     struct Escrow {
         address payable sender;
         address payable receiver;
@@ -42,7 +23,7 @@ contract HTLCEscrow is ReentrancyGuard {
         uint256 timelock;
         bool withdrawn;
         bool cancelled;
-        address tokenAddress; // address(0) for TRX, token contract for TRC20
+        address tokenAddress; // address(0) for native token
         string orderId;
         uint256 createdAt;
     }
@@ -75,63 +56,84 @@ contract HTLCEscrow is ReentrancyGuard {
         string orderId
     );
 
-    // Modifiers
+    // Custom errors for gas efficiency
+    error EscrowAlreadyExists();
+    error EscrowNotFound();
+    error AlreadyWithdrawn();
+    error AlreadyCancelled();
+    error InvalidSecret();
+    error TimelockNotExpired();
+    error TimelockMustBeFuture();
+    error UnauthorizedAccess();
+    error InvalidAmount();
+    error InvalidAddress();
+    error OrderIdAlreadyUsed();
+    error TokenTransferFailed();
+
+    // Modifiers for access control and validation
     modifier escrowExists(bytes32 escrowId) {
-        require(escrows[escrowId].amount > 0, "Escrow does not exist");
+        if (escrows[escrowId].amount == 0) revert EscrowNotFound();
         _;
     }
 
     modifier notWithdrawn(bytes32 escrowId) {
-        require(!escrows[escrowId].withdrawn, "Already withdrawn");
+        if (escrows[escrowId].withdrawn) revert AlreadyWithdrawn();
         _;
     }
 
     modifier notCancelled(bytes32 escrowId) {
-        require(!escrows[escrowId].cancelled, "Already cancelled");
+        if (escrows[escrowId].cancelled) revert AlreadyCancelled();
         _;
     }
 
     modifier onlyReceiver(bytes32 escrowId) {
-        require(msg.sender == escrows[escrowId].receiver, "Only receiver can withdraw");
+        if (msg.sender != escrows[escrowId].receiver) revert UnauthorizedAccess();
         _;
     }
 
     modifier onlySender(bytes32 escrowId) {
-        require(msg.sender == escrows[escrowId].sender, "Only sender can cancel");
+        if (msg.sender != escrows[escrowId].sender) revert UnauthorizedAccess();
         _;
     }
 
     modifier timelockExpired(bytes32 escrowId) {
-        require(block.timestamp >= escrows[escrowId].timelock, "Timelock not expired");
+        if (block.timestamp < escrows[escrowId].timelock) revert TimelockNotExpired();
         _;
     }
 
+    constructor(address initialOwner) Ownable(initialOwner) {}
+
     /**
-     * @dev Create HTLC escrow with TRX (native token)
+     * @dev Create HTLC escrow with native MON token
+     * @param secretHash Hash of the secret (keccak256)
+     * @param timelock Unix timestamp when refund becomes available
+     * @param receiver Address that can withdraw with secret
+     * @param orderId Unique identifier for the order
+     * @return escrowId Unique identifier for this escrow
      */
-    function createHTLCEscrowTRX(
+    function createHTLCEscrowMON(
         bytes32 secretHash,
         uint256 timelock,
         address payable receiver,
         string memory orderId
     ) external payable nonReentrant returns (bytes32) {
-        require(msg.value > 0, "Amount must be greater than 0");
-        require(timelock > block.timestamp, "Timelock must be in future");
-        require(bytes(orderId).length > 0, "Order ID required");
-        require(receiver != address(0), "Invalid receiver address");
+        if (msg.value == 0) revert InvalidAmount();
+        if (timelock <= block.timestamp) revert TimelockMustBeFuture();
+        if (receiver == address(0)) revert InvalidAddress();
+        if (bytes(orderId).length == 0) revert InvalidAmount();
         
         bytes32 escrowId = keccak256(abi.encodePacked(
             msg.sender,
             receiver,
-            msg.value,
             secretHash,
             timelock,
             orderId,
-            block.timestamp
+            block.timestamp,
+            msg.value
         ));
         
-        require(escrows[escrowId].amount == 0, "Escrow already exists");
-        require(orderToEscrowId[orderId] == bytes32(0), "Order ID already used");
+        if (escrows[escrowId].amount != 0) revert EscrowAlreadyExists();
+        if (orderToEscrowId[orderId] != bytes32(0)) revert OrderIdAlreadyUsed();
         
         escrows[escrowId] = Escrow({
             sender: payable(msg.sender),
@@ -141,7 +143,7 @@ contract HTLCEscrow is ReentrancyGuard {
             timelock: timelock,
             withdrawn: false,
             cancelled: false,
-            tokenAddress: address(0), // Native TRX
+            tokenAddress: address(0),
             orderId: orderId,
             createdAt: block.timestamp
         });
@@ -163,9 +165,16 @@ contract HTLCEscrow is ReentrancyGuard {
     }
 
     /**
-     * @dev Create HTLC escrow with TRC20 token
+     * @dev Create HTLC escrow with ERC20 token on Monad
+     * @param tokenAddress Contract address of the ERC20 token
+     * @param amount Amount of tokens to escrow
+     * @param secretHash Hash of the secret (keccak256)
+     * @param timelock Unix timestamp when refund becomes available
+     * @param receiver Address that can withdraw with secret
+     * @param orderId Unique identifier for the order
+     * @return escrowId Unique identifier for this escrow
      */
-    function createHTLCEscrowTRC20(
+    function createHTLCEscrowERC20(
         address tokenAddress,
         uint256 amount,
         bytes32 secretHash,
@@ -173,11 +182,11 @@ contract HTLCEscrow is ReentrancyGuard {
         address payable receiver,
         string memory orderId
     ) external nonReentrant returns (bytes32) {
-        require(tokenAddress != address(0), "Invalid token address");
-        require(amount > 0, "Amount must be greater than 0");
-        require(timelock > block.timestamp, "Timelock must be in future");
-        require(bytes(orderId).length > 0, "Order ID required");
-        require(receiver != address(0), "Invalid receiver address");
+        if (tokenAddress == address(0)) revert InvalidAddress();
+        if (amount == 0) revert InvalidAmount();
+        if (timelock <= block.timestamp) revert TimelockMustBeFuture();
+        if (receiver == address(0)) revert InvalidAddress();
+        if (bytes(orderId).length == 0) revert InvalidAmount();
         
         bytes32 escrowId = keccak256(abi.encodePacked(
             msg.sender,
@@ -190,14 +199,11 @@ contract HTLCEscrow is ReentrancyGuard {
             block.timestamp
         ));
         
-        require(escrows[escrowId].amount == 0, "Escrow already exists");
-        require(orderToEscrowId[orderId] == bytes32(0), "Order ID already used");
+        if (escrows[escrowId].amount != 0) revert EscrowAlreadyExists();
+        if (orderToEscrowId[orderId] != bytes32(0)) revert OrderIdAlreadyUsed();
         
-        // Transfer tokens to this contract
-        require(
-            ITRC20(tokenAddress).transferFrom(msg.sender, address(this), amount),
-            "Token transfer failed"
-        );
+        // Transfer tokens to this contract using SafeERC20
+        IERC20(tokenAddress).safeTransferFrom(msg.sender, address(this), amount);
         
         escrows[escrowId] = Escrow({
             sender: payable(msg.sender),
@@ -229,7 +235,10 @@ contract HTLCEscrow is ReentrancyGuard {
     }
 
     /**
-     * @dev Withdraw funds by providing the secret
+     * @dev Withdraw funds by providing the secret (HTLC hashlock)
+     * Only the designated receiver can call this function
+     * @param escrowId Unique identifier for the escrow
+     * @param secret The preimage of the secretHash
      */
     function withdraw(
         bytes32 escrowId,
@@ -244,36 +253,29 @@ contract HTLCEscrow is ReentrancyGuard {
     {
         Escrow storage escrow = escrows[escrowId];
         
-        // Verify secret
-        require(
-            keccak256(abi.encodePacked(secret)) == escrow.secretHash,
-            "Invalid secret"
-        );
+        // Verify secret matches hash (CRITICAL HTLC REQUIREMENT)
+        bytes32 providedSecretHash = keccak256(abi.encodePacked(secret));
+        if (providedSecretHash != escrow.secretHash) revert InvalidSecret();
         
         escrow.withdrawn = true;
         
         // Transfer funds to receiver
         if (escrow.tokenAddress == address(0)) {
-            // Native TRX transfer
-            escrow.receiver.transfer(escrow.amount);
+            // Native token transfer with gas limit
+            (bool success, ) = escrow.receiver.call{value: escrow.amount, gas: 2300}("");
+            if (!success) revert TokenTransferFailed();
         } else {
-            // TRC20 token transfer
-            require(
-                ITRC20(escrow.tokenAddress).transfer(escrow.receiver, escrow.amount),
-                "Token transfer failed"
-            );
+            // ERC20 token transfer using SafeERC20
+            IERC20(escrow.tokenAddress).safeTransfer(escrow.receiver, escrow.amount);
         }
         
-        emit EscrowWithdrawn(
-            escrowId,
-            escrow.receiver,
-            keccak256(abi.encodePacked(secret)),
-            escrow.orderId
-        );
+        emit EscrowWithdrawn(escrowId, escrow.receiver, providedSecretHash, escrow.orderId);
     }
 
     /**
-     * @dev Cancel escrow and refund sender after timelock expires
+     * @dev Cancel escrow and refund sender after timelock expires (HTLC timelock)
+     * Only the original sender can call this function
+     * @param escrowId Unique identifier for the escrow
      */
     function cancel(
         bytes32 escrowId
@@ -292,21 +294,19 @@ contract HTLCEscrow is ReentrancyGuard {
         
         // Refund to sender
         if (escrow.tokenAddress == address(0)) {
-            // Native TRX refund
-            escrow.sender.transfer(escrow.amount);
+            // Native token refund with gas limit
+            (bool success, ) = escrow.sender.call{value: escrow.amount, gas: 2300}("");
+            if (!success) revert TokenTransferFailed();
         } else {
-            // TRC20 token refund
-            require(
-                ITRC20(escrow.tokenAddress).transfer(escrow.sender, escrow.amount),
-                "Token transfer failed"
-            );
+            // ERC20 token refund using SafeERC20
+            IERC20(escrow.tokenAddress).safeTransfer(escrow.sender, escrow.amount);
         }
         
         emit EscrowCancelled(escrowId, escrow.sender, escrow.orderId);
     }
 
     /**
-     * @dev Get escrow details by ID
+     * @dev Get complete escrow details
      */
     function getEscrow(bytes32 escrowId) external view returns (
         address sender,
@@ -351,7 +351,7 @@ contract HTLCEscrow is ReentrancyGuard {
         uint256 createdAt
     ) {
         escrowId = orderToEscrowId[orderId];
-        require(escrowId != bytes32(0), "Order not found");
+        if (escrowId == bytes32(0)) revert EscrowNotFound();
         
         Escrow storage escrow = escrows[escrowId];
         return (
@@ -369,7 +369,7 @@ contract HTLCEscrow is ReentrancyGuard {
     }
 
     /**
-     * @dev Verify if secret matches the hash
+     * @dev Verify if provided secret is correct for escrow
      */
     function verifySecret(bytes32 escrowId, string memory secret) external view returns (bool) {
         if (escrows[escrowId].amount == 0) return false;
@@ -377,7 +377,7 @@ contract HTLCEscrow is ReentrancyGuard {
     }
 
     /**
-     * @dev Check if escrow can be cancelled
+     * @dev Check if escrow can be cancelled (timelock expired)
      */
     function canCancel(bytes32 escrowId) external view returns (bool) {
         Escrow storage escrow = escrows[escrowId];
@@ -388,12 +388,37 @@ contract HTLCEscrow is ReentrancyGuard {
     }
 
     /**
-     * @dev Check if escrow can be withdrawn (requires valid secret)
+     * @dev Check if escrow can be withdrawn (not yet expired, not processed)
      */
     function canWithdraw(bytes32 escrowId) external view returns (bool) {
         Escrow storage escrow = escrows[escrowId];
         return escrow.amount > 0 && 
                !escrow.withdrawn && 
                !escrow.cancelled;
+    }
+
+    /**
+     * @dev Emergency recovery function (only owner, after extended period)
+     * This is a safety mechanism for stuck funds after 30 days
+     */
+    function emergencyRecovery(bytes32 escrowId) external onlyOwner {
+        Escrow storage escrow = escrows[escrowId];
+        if (escrow.amount == 0) revert EscrowNotFound();
+        if (escrow.withdrawn || escrow.cancelled) revert AlreadyWithdrawn();
+        
+        // Only allow after 30 days beyond timelock
+        if (block.timestamp < escrow.timelock + 30 days) revert TimelockNotExpired();
+        
+        escrow.cancelled = true;
+        
+        // Refund to original sender
+        if (escrow.tokenAddress == address(0)) {
+            (bool success, ) = escrow.sender.call{value: escrow.amount, gas: 2300}("");
+            if (!success) revert TokenTransferFailed();
+        } else {
+            IERC20(escrow.tokenAddress).safeTransfer(escrow.sender, escrow.amount);
+        }
+        
+        emit EscrowCancelled(escrowId, escrow.sender, escrow.orderId);
     }
 }

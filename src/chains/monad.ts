@@ -35,7 +35,7 @@ export class MonadAdapter extends ChainAdapter {
       
       if (this.isNativeToken(tokenAddress)) {
         // Native token (MON) escrow
-        tx = await escrowContract.createHTLCEscrowNative(
+        tx = await escrowContract.createHTLCEscrowMON(
           order.secretHash,
           timelock,
           order.maker,
@@ -233,7 +233,7 @@ export class MonadAdapter extends ChainAdapter {
 
   private getEscrowABI(): string[] {
     return [
-      'function createHTLCEscrowNative(bytes32 secretHash, uint256 timelock, address sender, address receiver, string memory orderId) payable returns (bytes32)',
+      'function createHTLCEscrowMON(bytes32 secretHash, uint256 timelock, address receiver, string memory orderId) payable returns (bytes32)',
       'function createHTLCEscrowERC20(address tokenAddress, uint256 amount, bytes32 secretHash, uint256 timelock, address sender, address receiver, string memory orderId) returns (bytes32)',
       'function withdraw(bytes32 escrowId, string memory secret)',
       'function cancel(bytes32 escrowId)',
