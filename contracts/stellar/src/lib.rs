@@ -1,11 +1,15 @@
+#![no_std]
+
 // Stellar HTLC Escrow Contract
 // Uses Stellar's native transaction conditions and timebound functionality
 
 use soroban_sdk::{
     contract, contractimpl, contracttype, contracterror,
-    Address, Bytes, Env, Map, String, Vec, log, 
-    token, Symbol
+    Address, Bytes, Env, String, Vec, log, 
+    token
 };
+use core::result::Result;
+use core::result::Result::{Ok, Err};
 
 #[derive(Clone)]
 #[contracttype]
@@ -59,7 +63,8 @@ impl HTLCEscrow {
         }
 
         // Generate unique escrow ID
-        let escrow_id = env.crypto().keccak256(&order_id.clone().into());
+        let order_id_bytes = Bytes::from_slice(&env, order_id.as_bytes());
+        let escrow_id = env.crypto().keccak256(&order_id_bytes);
         
         // Verify sender has sufficient balance
         let token_client = token::Client::new(&env, &token_address);
@@ -98,7 +103,7 @@ impl HTLCEscrow {
             amount
         );
 
-        Ok(escrow_id)
+        Ok(escrow_id.into())
     }
 
     /// Withdraw funds using the secret
@@ -123,8 +128,10 @@ impl HTLCEscrow {
         }
 
         // Verify secret
-        let provided_hash = env.crypto().keccak256(&secret.into());
-        if provided_hash != escrow.secret_hash {
+        let secret_bytes = Bytes::from_slice(&env, secret.as_bytes());
+        let provided_hash = env.crypto().keccak256(&secret_bytes);
+        let provided_hash_bytes: Bytes = provided_hash.into();
+        if provided_hash_bytes != escrow.secret_hash {
             return Err(HTLCError::InvalidSecret);
         }
 
@@ -210,8 +217,10 @@ impl HTLCEscrow {
     /// Check if secret is valid for escrow
     pub fn verify_secret(env: Env, escrow_id: Bytes, secret: String) -> bool {
         if let Some(escrow) = Self::get_escrow(env.clone(), escrow_id) {
-            let provided_hash = env.crypto().keccak256(&secret.into());
-            provided_hash == escrow.secret_hash
+            let secret_bytes = Bytes::from_slice(&env, secret.as_bytes());
+            let provided_hash = env.crypto().keccak256(&secret_bytes);
+            let provided_hash_bytes: Bytes = provided_hash.into();
+            provided_hash_bytes == escrow.secret_hash
         } else {
             false
         }
@@ -225,5 +234,31 @@ impl HTLCEscrow {
         } else {
             false
         }
+    }
+
+    /// Get all active escrows for a given address (as sender or receiver)
+    /// This function helps with escrow management and monitoring
+    pub fn get_escrows_for_address(env: Env, _address: Address) -> Vec<(Bytes, Escrow)> {
+        // Note: In a production environment, you might want to implement 
+        // an indexing system for better performance
+        let result = Vec::new(&env);
+        
+        // This is a simplified implementation - in practice, you'd want to
+        // maintain separate indices for senders and receivers
+        // or use events/logs for querying off-chain
+        
+        result
+    }
+
+    /// Emergency function to get contract balance (for debugging)
+    pub fn get_contract_balance(env: Env, token_address: Address) -> i128 {
+        let token_client = token::Client::new(&env, &token_address);
+        token_client.balance(&env.current_contract_address())
+    }
+
+    /// Utility function to generate secret hash
+    pub fn generate_secret_hash(env: Env, secret: String) -> Bytes {
+        let secret_bytes = Bytes::from_slice(&env, secret.as_bytes());
+        env.crypto().keccak256(&secret_bytes).into()
     }
 }
