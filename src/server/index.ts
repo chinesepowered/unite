@@ -1,8 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { WorkingCrossChainResolver } from '../resolvers/working-resolver';
-import { SwapStatus } from '../core/types';
+import { CrossChainResolver } from '../resolvers/cross-chain-resolver';
 
 dotenv.config();
 
@@ -14,22 +13,22 @@ app.use(cors());
 app.use(express.json());
 
 // Initialize cross-chain resolver
-const resolver = new WorkingCrossChainResolver();
+const resolver = new CrossChainResolver();
 
 // Routes
 
 // Health check
-app.get('/health', (req, res) => {
+app.get('/health', (_, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 // Get supported chains
-app.get('/api/chains', (req, res) => {
+app.get('/api/chains', (_, res) => {
   try {
     const chains = resolver.getSupportedChains();
     res.json({ chains });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error instanceof Error ? error.message : String(error) });
   }
 });
 
@@ -40,7 +39,7 @@ app.get('/api/balance/:chain/:address/:token', async (req, res) => {
     const balance = await resolver.getChainBalance(chain, address, token);
     res.json({ balance: balance.toString() });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error instanceof Error ? error.message : String(error) });
   }
 });
 
@@ -59,7 +58,8 @@ app.post('/api/swap', async (req, res) => {
 
     // Validate required fields
     if (!srcChain || !dstChain || !srcToken || !dstToken || !srcAmount || !dstAmount || !maker) {
-      return res.status(400).json({ error: 'Missing required fields' });
+      res.status(400).json({ error: 'Missing required fields' });
+      return;
     }
 
     const swapState = await resolver.createSwap(
@@ -82,7 +82,7 @@ app.post('/api/swap', async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error instanceof Error ? error.message : String(error) });
   }
 });
 
@@ -106,7 +106,7 @@ app.post('/api/swap/:orderId/execute', async (req, res) => {
       });
     }
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error instanceof Error ? error.message : String(error) });
   }
 });
 
@@ -128,7 +128,7 @@ app.post('/api/swap/:orderId/cancel', async (req, res) => {
       });
     }
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error instanceof Error ? error.message : String(error) });
   }
 });
 
@@ -139,7 +139,8 @@ app.get('/api/swap/:orderId', (req, res) => {
     const swapState = resolver.getSwapState(orderId);
     
     if (!swapState) {
-      return res.status(404).json({ error: 'Swap not found' });
+      res.status(404).json({ error: 'Swap not found' });
+      return;
     }
 
     res.json({
@@ -158,12 +159,12 @@ app.get('/api/swap/:orderId', (req, res) => {
       updatedAt: swapState.updatedAt
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error instanceof Error ? error.message : String(error) });
   }
 });
 
 // Get all swaps
-app.get('/api/swaps', (req, res) => {
+app.get('/api/swaps', (_, res) => {
   try {
     const swaps = resolver.getAllSwaps().map(swap => ({
       orderId: swap.order.orderId,
@@ -178,7 +179,7 @@ app.get('/api/swaps', (req, res) => {
     
     res.json({ swaps });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error instanceof Error ? error.message : String(error) });
   }
 });
 
@@ -199,7 +200,7 @@ app.post('/api/swap/eth-to-chain', async (req, res) => {
       secretHash: swapState.order.secretHash
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error instanceof Error ? error.message : String(error) });
   }
 });
 
@@ -218,7 +219,7 @@ app.post('/api/swap/chain-to-eth', async (req, res) => {
       secretHash: swapState.order.secretHash
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error instanceof Error ? error.message : String(error) });
   }
 });
 
@@ -240,11 +241,13 @@ app.post('/api/swap/partial', async (req, res) => {
 
     // Validate required fields
     if (!srcChain || !dstChain || !srcToken || !dstToken || !srcAmount || !dstAmount || !maker) {
-      return res.status(400).json({ error: 'Missing required fields' });
+      res.status(400).json({ error: 'Missing required fields' });
+      return;
     }
 
     if (partCount < 2 || partCount > 10) {
-      return res.status(400).json({ error: 'Part count must be between 2 and 10' });
+      res.status(400).json({ error: 'Part count must be between 2 and 10' });
+      return;
     }
 
     const swapState = await resolver.createPartialSwap(
@@ -308,11 +311,13 @@ app.get('/api/swap/:orderId/partial-status', (req, res) => {
     const swapState = resolver.getSwapState(orderId);
     
     if (!swapState) {
-      return res.status(404).json({ error: 'Swap not found' });
+      res.status(404).json({ error: 'Swap not found' });
+      return;
     }
 
     if (!swapState.order.isPartialFill) {
-      return res.status(400).json({ error: 'This is not a partial fill swap' });
+      res.status(400).json({ error: 'This is not a partial fill swap' });
+      return;
     }
 
     const partialFills = swapState.order.partialFills || [];
@@ -392,7 +397,7 @@ app.post('/api/demo/swap', async (req, res) => {
       secretHash: swapState.order.secretHash
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error instanceof Error ? error.message : String(error) });
   }
 });
 
@@ -453,12 +458,12 @@ app.post('/api/demo/partial-swap', async (req, res) => {
       }))
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error instanceof Error ? error.message : String(error) });
   }
 });
 
 // Error handler
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: any, _: express.Request, res: express.Response, __: express.NextFunction) => {
   console.error(err.stack);
   res.status(500).json({ error: 'Internal server error' });
 });

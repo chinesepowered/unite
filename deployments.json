@@ -1,0 +1,117 @@
+{
+  "testnet": {
+    "ethereum": {
+      "chainId": "11155111",
+      "name": "Sepolia",
+      "rpcUrl": "https://1rpc.io/sepolia",
+      "htlcContract": "0x_YOUR_DEPLOYED_ETH_HTLC_CONTRACT",
+      "nativeToken": {
+        "symbol": "ETH",
+        "address": "0x0000000000000000000000000000000000000000",
+        "decimals": 18
+      }
+    },
+    "monad": {
+      "chainId": "41454",
+      "name": "Monad Testnet",
+      "rpcUrl": "https://testnet1.monad.xyz",
+      "htlcContract": "0x_YOUR_DEPLOYED_MONAD_HTLC_CONTRACT",
+      "nativeToken": {
+        "symbol": "MON",
+        "address": "native",
+        "decimals": 18
+      }
+    },
+    "tron": {
+      "chainId": "shasta",
+      "name": "Tron Shasta",
+      "rpcUrl": "https://api.shasta.trongrid.io",
+      "htlcContract": "T_YOUR_DEPLOYED_TRON_HTLC_CONTRACT",
+      "nativeToken": {
+        "symbol": "TRX",
+        "address": "native",
+        "decimals": 6
+      }
+    },
+    "stellar": {
+      "chainId": "stellar-testnet",
+      "name": "Stellar Testnet",
+      "rpcUrl": "https://horizon-testnet.stellar.org",
+      "contractId": "C_YOUR_DEPLOYED_STELLAR_CONTRACT_ID",
+      "nativeToken": {
+        "symbol": "XLM",
+        "address": "native",
+        "decimals": 7
+      }
+    },
+    "sui": {
+      "chainId": "sui-testnet",
+      "name": "Sui Testnet",
+      "rpcUrl": "https://fullnode.testnet.sui.io:443",
+      "packageId": "0x_YOUR_DEPLOYED_SUI_PACKAGE_ID",
+      "nativeToken": {
+        "symbol": "SUI",
+        "address": "0x2::sui::SUI",
+        "decimals": 9
+      }
+    }
+  },
+  "mainnet": {
+    "ethereum": {
+      "chainId": "1",
+      "name": "Ethereum Mainnet",
+      "rpcUrl": "https://1rpc.io/eth",
+      "escrowFactory": "0x_1INCH_ESCROW_FACTORY_ADDRESS",
+      "resolver": "0x_1INCH_RESOLVER_ADDRESS",
+      "nativeToken": {
+        "symbol": "ETH",
+        "address": "0x0000000000000000000000000000000000000000",
+        "decimals": 18
+      }
+    },
+    "monad": {
+      "chainId": "34443",
+      "name": "Monad Mainnet",
+      "rpcUrl": "https://monad-rpc.com",
+      "htlcContract": "0x_YOUR_DEPLOYED_MONAD_MAINNET_CONTRACT",
+      "nativeToken": {
+        "symbol": "MON",
+        "address": "native",
+        "decimals": 18
+      }
+    },
+    "tron": {
+      "chainId": "mainnet",
+      "name": "Tron Mainnet",
+      "rpcUrl": "https://api.trongrid.io",
+      "htlcContract": "T_YOUR_DEPLOYED_TRON_MAINNET_CONTRACT",
+      "nativeToken": {
+        "symbol": "TRX",
+        "address": "native",
+        "decimals": 6
+      }
+    },
+    "stellar": {
+      "chainId": "stellar-mainnet",
+      "name": "Stellar Mainnet",
+      "rpcUrl": "https://horizon.stellar.org",
+      "contractId": "C_YOUR_DEPLOYED_STELLAR_MAINNET_CONTRACT",
+      "nativeToken": {
+        "symbol": "XLM",
+        "address": "native",
+        "decimals": 7
+      }
+    },
+    "sui": {
+      "chainId": "sui-mainnet",
+      "name": "Sui Mainnet",
+      "rpcUrl": "https://fullnode.mainnet.sui.io:443",
+      "packageId": "0x_YOUR_DEPLOYED_SUI_MAINNET_PACKAGE",
+      "nativeToken": {
+        "symbol": "SUI",
+        "address": "0x2::sui::SUI",
+        "decimals": 9
+      }
+    }
+  }
+}

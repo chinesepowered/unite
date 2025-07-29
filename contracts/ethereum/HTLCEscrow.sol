@@ -1,0 +1,371 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.23;
+
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+/**
+ * @title HTLCEscrow for Ethereum (Testnet Demo)
+ * @dev Simplified HTLC implementation compatible with 1inch patterns
+ * For hackathon demo - production would use 1inch infrastructure
+ */
+contract HTLCEscrow is ReentrancyGuard, Ownable {
+    using SafeERC20 for IERC20;
+
+    struct Escrow {
+        address payable sender;
+        address payable receiver;
+        uint256 amount;
+        bytes32 secretHash;
+        uint256 timelock;
+        bool withdrawn;
+        bool cancelled;
+        address tokenAddress; // address(0) for ETH
+        string orderId;
+        uint256 createdAt;
+    }
+
+    mapping(bytes32 => Escrow) public escrows;
+    mapping(string => bytes32) public orderToEscrowId;
+    
+    // Events
+    event EscrowCreated(
+        bytes32 indexed escrowId,
+        address indexed sender,
+        address indexed receiver,
+        uint256 amount,
+        bytes32 secretHash,
+        uint256 timelock,
+        address tokenAddress,
+        string orderId
+    );
+    
+    event EscrowWithdrawn(
+        bytes32 indexed escrowId,
+        address indexed receiver,
+        bytes32 secret,
+        string orderId
+    );
+    
+    event EscrowCancelled(
+        bytes32 indexed escrowId,
+        address indexed sender,
+        string orderId
+    );
+
+    // Custom errors for gas efficiency
+    error EscrowAlreadyExists();
+    error EscrowNotFound();
+    error AlreadyWithdrawn();
+    error AlreadyCancelled();
+    error InvalidSecret();
+    error TimelockNotExpired();
+    error TimelockMustBeFuture();
+    error UnauthorizedAccess();
+    error InvalidAmount();
+    error InvalidAddress();
+    error OrderIdAlreadyUsed();
+    error TokenTransferFailed();
+
+    // Modifiers
+    modifier escrowExists(bytes32 escrowId) {
+        if (escrows[escrowId].amount == 0) revert EscrowNotFound();
+        _;
+    }
+
+    modifier notWithdrawn(bytes32 escrowId) {
+        if (escrows[escrowId].withdrawn) revert AlreadyWithdrawn();
+        _;
+    }
+
+    modifier notCancelled(bytes32 escrowId) {
+        if (escrows[escrowId].cancelled) revert AlreadyCancelled();
+        _;
+    }
+
+    modifier onlyReceiver(bytes32 escrowId) {
+        if (msg.sender != escrows[escrowId].receiver) revert UnauthorizedAccess();
+        _;
+    }
+
+    modifier onlySender(bytes32 escrowId) {
+        if (msg.sender != escrows[escrowId].sender) revert UnauthorizedAccess();
+        _;
+    }
+
+    modifier timelockExpired(bytes32 escrowId) {
+        if (block.timestamp < escrows[escrowId].timelock) revert TimelockNotExpired();
+        _;
+    }
+
+    constructor(address initialOwner) Ownable(initialOwner) {}
+
+    /**
+     * @dev Create HTLC escrow with native ETH
+     */
+    function createHTLCEscrowNative(
+        bytes32 secretHash,
+        uint256 timelock,
+        address payable receiver,
+        string memory orderId
+    ) external payable nonReentrant returns (bytes32) {
+        if (msg.value == 0) revert InvalidAmount();
+        if (timelock <= block.timestamp) revert TimelockMustBeFuture();
+        if (receiver == address(0)) revert InvalidAddress();
+        if (bytes(orderId).length == 0) revert InvalidAmount();
+        
+        bytes32 escrowId = keccak256(abi.encodePacked(
+            msg.sender,
+            receiver,
+            secretHash,
+            timelock,
+            orderId,
+            block.timestamp,
+            msg.value
+        ));
+        
+        if (escrows[escrowId].amount != 0) revert EscrowAlreadyExists();
+        if (orderToEscrowId[orderId] != bytes32(0)) revert OrderIdAlreadyUsed();
+        
+        escrows[escrowId] = Escrow({
+            sender: payable(msg.sender),
+            receiver: receiver,
+            amount: msg.value,
+            secretHash: secretHash,
+            timelock: timelock,
+            withdrawn: false,
+            cancelled: false,
+            tokenAddress: address(0),
+            orderId: orderId,
+            createdAt: block.timestamp
+        });
+        
+        orderToEscrowId[orderId] = escrowId;
+        
+        emit EscrowCreated(
+            escrowId,
+            msg.sender,
+            receiver,
+            msg.value,
+            secretHash,
+            timelock,
+            address(0),
+            orderId
+        );
+        
+        return escrowId;
+    }
+
+    /**
+     * @dev Create HTLC escrow with ERC20 token
+     */
+    function createHTLCEscrowERC20(
+        address tokenAddress,
+        uint256 amount,
+        bytes32 secretHash,
+        uint256 timelock,
+        address payable receiver,
+        string memory orderId
+    ) external nonReentrant returns (bytes32) {
+        if (tokenAddress == address(0)) revert InvalidAddress();
+        if (amount == 0) revert InvalidAmount();
+        if (timelock <= block.timestamp) revert TimelockMustBeFuture();
+        if (receiver == address(0)) revert InvalidAddress();
+        if (bytes(orderId).length == 0) revert InvalidAmount();
+        
+        bytes32 escrowId = keccak256(abi.encodePacked(
+            msg.sender,
+            receiver,
+            tokenAddress,
+            amount,
+            secretHash,
+            timelock,
+            orderId,
+            block.timestamp
+        ));
+        
+        if (escrows[escrowId].amount != 0) revert EscrowAlreadyExists();
+        if (orderToEscrowId[orderId] != bytes32(0)) revert OrderIdAlreadyUsed();
+        
+        // Transfer tokens to this contract using SafeERC20
+        IERC20(tokenAddress).safeTransferFrom(msg.sender, address(this), amount);
+        
+        escrows[escrowId] = Escrow({
+            sender: payable(msg.sender),
+            receiver: receiver,
+            amount: amount,
+            secretHash: secretHash,
+            timelock: timelock,
+            withdrawn: false,
+            cancelled: false,
+            tokenAddress: tokenAddress,
+            orderId: orderId,
+            createdAt: block.timestamp
+        });
+        
+        orderToEscrowId[orderId] = escrowId;
+        
+        emit EscrowCreated(
+            escrowId,
+            msg.sender,
+            receiver,
+            amount,
+            secretHash,
+            timelock,
+            tokenAddress,
+            orderId
+        );
+        
+        return escrowId;
+    }
+
+    /**
+     * @dev Withdraw funds by providing the secret
+     */
+    function withdraw(
+        bytes32 escrowId,
+        string memory secret
+    ) 
+        external 
+        nonReentrant
+        escrowExists(escrowId)
+        notWithdrawn(escrowId)
+        notCancelled(escrowId)
+        onlyReceiver(escrowId)
+    {
+        Escrow storage escrow = escrows[escrowId];
+        
+        // Verify secret matches hash (CRITICAL HTLC REQUIREMENT)
+        bytes32 providedSecretHash = keccak256(abi.encodePacked(secret));
+        if (providedSecretHash != escrow.secretHash) revert InvalidSecret();
+        
+        escrow.withdrawn = true;
+        
+        // Transfer funds to receiver
+        if (escrow.tokenAddress == address(0)) {
+            // Native ETH transfer with gas limit
+            (bool success, ) = escrow.receiver.call{value: escrow.amount, gas: 2300}("");
+            if (!success) revert TokenTransferFailed();
+        } else {
+            // ERC20 token transfer using SafeERC20
+            IERC20(escrow.tokenAddress).safeTransfer(escrow.receiver, escrow.amount);
+        }
+        
+        emit EscrowWithdrawn(escrowId, escrow.receiver, providedSecretHash, escrow.orderId);
+    }
+
+    /**
+     * @dev Cancel escrow and refund sender after timelock expires
+     */
+    function cancel(
+        bytes32 escrowId
+    ) 
+        external 
+        nonReentrant
+        escrowExists(escrowId)
+        notWithdrawn(escrowId)
+        notCancelled(escrowId)
+        onlySender(escrowId)
+        timelockExpired(escrowId)
+    {
+        Escrow storage escrow = escrows[escrowId];
+        
+        escrow.cancelled = true;
+        
+        // Refund to sender
+        if (escrow.tokenAddress == address(0)) {
+            // Native ETH refund with gas limit
+            (bool success, ) = escrow.sender.call{value: escrow.amount, gas: 2300}("");
+            if (!success) revert TokenTransferFailed();
+        } else {
+            // ERC20 token refund using SafeERC20
+            IERC20(escrow.tokenAddress).safeTransfer(escrow.sender, escrow.amount);
+        }
+        
+        emit EscrowCancelled(escrowId, escrow.sender, escrow.orderId);
+    }
+
+    /**
+     * @dev Get escrow details by ID
+     */
+    function getEscrow(bytes32 escrowId) external view returns (
+        address sender,
+        address receiver,
+        uint256 amount,
+        bytes32 secretHash,
+        uint256 timelock,
+        bool withdrawn,
+        bool cancelled,
+        address tokenAddress,
+        string memory orderId,
+        uint256 createdAt
+    ) {
+        Escrow storage escrow = escrows[escrowId];
+        return (
+            escrow.sender,
+            escrow.receiver,
+            escrow.amount,
+            escrow.secretHash,
+            escrow.timelock,
+            escrow.withdrawn,
+            escrow.cancelled,
+            escrow.tokenAddress,
+            escrow.orderId,
+            escrow.createdAt
+        );
+    }
+
+    /**
+     * @dev Get escrow details by order ID
+     */
+    function getEscrowByOrderId(string memory orderId) external view returns (
+        bytes32 escrowId,
+        address sender,
+        address receiver,
+        uint256 amount,
+        bytes32 secretHash,
+        uint256 timelock,
+        bool withdrawn,
+        bool cancelled,
+        address tokenAddress,
+        uint256 createdAt
+    ) {
+        escrowId = orderToEscrowId[orderId];
+        if (escrowId == bytes32(0)) revert EscrowNotFound();
+        
+        Escrow storage escrow = escrows[escrowId];
+        return (
+            escrowId,
+            escrow.sender,
+            escrow.receiver,
+            escrow.amount,
+            escrow.secretHash,
+            escrow.timelock,
+            escrow.withdrawn,
+            escrow.cancelled,
+            escrow.tokenAddress,
+            escrow.createdAt
+        );
+    }
+
+    /**
+     * @dev Verify if provided secret is correct for escrow
+     */
+    function verifySecret(bytes32 escrowId, string memory secret) external view returns (bool) {
+        if (escrows[escrowId].amount == 0) return false;
+        return keccak256(abi.encodePacked(secret)) == escrows[escrowId].secretHash;
+    }
+
+    /**
+     * @dev Check if escrow can be cancelled (timelock expired)
+     */
+    function canCancel(bytes32 escrowId) external view returns (bool) {
+        Escrow storage escrow = escrows[escrowId];
+        return escrow.amount > 0 && 
+               !escrow.withdrawn && 
+               !escrow.cancelled &&
+               block.timestamp >= escrow.timelock;
+    }
+}
