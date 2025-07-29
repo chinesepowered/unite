@@ -6,7 +6,7 @@
 use soroban_sdk::{
     contract, contractimpl, contracttype, contracterror,
     Address, Bytes, Env, String, Vec, log, 
-    token
+    token, FromVal
 };
 use core::result::Result;
 use core::result::Result::{Ok, Err};
@@ -63,7 +63,9 @@ impl HTLCEscrow {
         }
 
         // Generate unique escrow ID
-        let order_id_bytes = Bytes::from_slice(&env, order_id.as_bytes());
+        // Convert String to Bytes properly
+        let order_id_val = order_id.to_val();
+        let order_id_bytes = Bytes::from_val(&env, &order_id_val);
         let escrow_id = env.crypto().keccak256(&order_id_bytes);
         
         // Verify sender has sufficient balance
@@ -128,7 +130,9 @@ impl HTLCEscrow {
         }
 
         // Verify secret
-        let secret_bytes = Bytes::from_slice(&env, secret.as_bytes());
+        // Convert String to Bytes properly
+        let secret_val = secret.to_val();
+        let secret_bytes = Bytes::from_val(&env, &secret_val);
         let provided_hash = env.crypto().keccak256(&secret_bytes);
         let provided_hash_bytes: Bytes = provided_hash.into();
         if provided_hash_bytes != escrow.secret_hash {
@@ -217,7 +221,9 @@ impl HTLCEscrow {
     /// Check if secret is valid for escrow
     pub fn verify_secret(env: Env, escrow_id: Bytes, secret: String) -> bool {
         if let Some(escrow) = Self::get_escrow(env.clone(), escrow_id) {
-            let secret_bytes = Bytes::from_slice(&env, secret.as_bytes());
+            // Convert String to Bytes properly
+            let secret_val = secret.to_val();
+            let secret_bytes = Bytes::from_val(&env, &secret_val);
             let provided_hash = env.crypto().keccak256(&secret_bytes);
             let provided_hash_bytes: Bytes = provided_hash.into();
             provided_hash_bytes == escrow.secret_hash
@@ -258,7 +264,9 @@ impl HTLCEscrow {
 
     /// Utility function to generate secret hash
     pub fn generate_secret_hash(env: Env, secret: String) -> Bytes {
-        let secret_bytes = Bytes::from_slice(&env, secret.as_bytes());
+        // Convert String to Bytes using proper Soroban SDK methods
+        let secret_val = secret.to_val();
+        let secret_bytes = Bytes::from_val(&env, &secret_val);
         env.crypto().keccak256(&secret_bytes).into()
     }
 }
