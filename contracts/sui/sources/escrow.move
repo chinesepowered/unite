@@ -2,15 +2,12 @@
 // Implements atomic cross-chain swaps with hashlock and timelock
 
 module htlc_escrow::escrow {
-    use sui::object::{Self, UID, ID};
-    use sui::transfer;
-    use sui::tx_context::{Self, TxContext};
-    use sui::coin::{Self, Coin};
-    use sui::clock::{Self, Clock};
-    use sui::event;
-    use sui::hash;
+    use sui::object::{self, UID, ID};
+    use sui::tx_context::{self, TxContext};
+    use sui::coin::{self, Coin};
+    use sui::clock::{self, Clock};
+    use std::string::{Self as string, String};
     use std::vector;
-    use std::string::{Self, String};
 
     /// Error codes
     const EInvalidTimelock: u64 = 1;
@@ -19,12 +16,10 @@ module htlc_escrow::escrow {
     const EInvalidSecret: u64 = 4;
     const ETimelockNotExpired: u64 = 5;
     const EUnauthorizedAccess: u64 = 6;
-    const EEscrowNotFound: u64 = 7;
-    const EInsufficientFunds: u64 = 8;
     const EZeroAmount: u64 = 9;
 
     /// HTLC Escrow object
-    struct HTLCEscrow<phantom T> has key {
+    public struct HTLCEscrow<phantom T> has key {
         id: UID,
         sender: address,
         receiver: address,
@@ -38,7 +33,7 @@ module htlc_escrow::escrow {
     }
 
     /// Events
-    struct EscrowCreated has copy, drop {
+    public struct EscrowCreated has copy, drop {
         escrow_id: ID,
         sender: address,
         receiver: address,
@@ -48,7 +43,7 @@ module htlc_escrow::escrow {
         created_at: u64,
     }
 
-    struct EscrowWithdrawn has copy, drop {
+    public struct EscrowWithdrawn has copy, drop {
         escrow_id: ID,
         receiver: address,
         amount: u64,
@@ -56,7 +51,7 @@ module htlc_escrow::escrow {
         withdrawn_at: u64,
     }
 
-    struct EscrowCancelled has copy, drop {
+    public struct EscrowCancelled has copy, drop {
         escrow_id: ID,
         sender: address,
         amount: u64,
@@ -103,7 +98,7 @@ module htlc_escrow::escrow {
         };
 
         // Emit creation event
-        event::emit(EscrowCreated {
+        sui::event::emit(EscrowCreated {
             escrow_id: id,
             sender,
             receiver,
@@ -114,7 +109,7 @@ module htlc_escrow::escrow {
         });
 
         // Transfer escrow object to shared storage
-        transfer::share_object(escrow);
+        sui::transfer::share_object(escrow);
         id
     }
 
@@ -139,7 +134,7 @@ module htlc_escrow::escrow {
         assert!(current_time < escrow.timelock, ETimelockNotExpired);
 
         // Verify secret hash
-        let provided_hash = hash::keccak256(&secret);
+        let provided_hash = sui::hash::keccak256(&secret);
         assert!(provided_hash == escrow.secret_hash, EInvalidSecret);
 
         // Mark as withdrawn
@@ -150,7 +145,7 @@ module htlc_escrow::escrow {
         let withdrawn_coin = coin::split(&mut escrow.coin, amount, ctx);
 
         // Emit withdrawal event
-        event::emit(EscrowWithdrawn {
+        sui::event::emit(EscrowWithdrawn {
             escrow_id: object::uid_to_inner(&escrow.id),
             receiver: sender,
             amount,
@@ -188,7 +183,7 @@ module htlc_escrow::escrow {
         let refunded_coin = coin::split(&mut escrow.coin, amount, ctx);
 
         // Emit cancellation event
-        event::emit(EscrowCancelled {
+        sui::event::emit(EscrowCancelled {
             escrow_id: object::uid_to_inner(&escrow.id),
             sender,
             amount,
@@ -225,7 +220,7 @@ module htlc_escrow::escrow {
 
     /// Verify if a secret is correct for the escrow
     public fun verify_secret<T>(escrow: &HTLCEscrow<T>, secret: vector<u8>): bool {
-        let provided_hash = hash::keccak256(&secret);
+        let provided_hash = sui::hash::keccak256(&secret);
         provided_hash == escrow.secret_hash
     }
 
@@ -347,7 +342,7 @@ module htlc_escrow::escrow {
         
         // Create secret and hash
         let secret = b"test_secret_123";
-        let secret_hash = hash::keccak256(&secret);
+        let secret_hash = sui::hash::keccak256(&secret);
         
         // Create escrow
         let order_id = string::utf8(b"order_123");
@@ -392,7 +387,7 @@ module htlc_escrow::escrow {
         
         // Create secret and hash
         let secret = b"test_secret_123";
-        let secret_hash = hash::keccak256(&secret);
+        let secret_hash = sui::hash::keccak256(&secret);
         
         // Create escrow
         let order_id = string::utf8(b"order_123");
@@ -449,7 +444,7 @@ module htlc_escrow::escrow {
         
         // Create secret and hash
         let secret = b"test_secret_123";
-        let secret_hash = hash::keccak256(&secret);
+        let secret_hash = sui::hash::keccak256(&secret);
         
         // Create escrow
         let order_id = string::utf8(b"order_123");
@@ -502,7 +497,7 @@ module htlc_escrow::escrow {
         
         // Create secret and hash
         let secret = b"test_secret_123";
-        let secret_hash = hash::keccak256(&secret);
+        let secret_hash = sui::hash::keccak256(&secret);
         
         // Create escrow
         let order_id = string::utf8(b"order_123");
