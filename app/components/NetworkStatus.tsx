@@ -7,7 +7,7 @@ import apiClient from '../lib/api';
 interface NetworkInfo {
   network: string;
   chains: string[];
-  ethereumMode: string;
+  baseMode: string;
 }
 
 export default function NetworkStatus() {
@@ -24,10 +24,16 @@ export default function NetworkStatus() {
         setNetworkInfo({
           network: process.env.NODE_ENV === 'production' ? 'mainnet' : 'testnet',
           chains: response.chains,
-          ethereumMode: 'auto-detected' // Would come from backend
+          baseMode: 'auto-detected' // Would come from backend
         });
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch network info');
+        // Fallback to static chain configuration when server is unavailable
+        console.warn('Server unavailable, using static chain configuration');
+        setNetworkInfo({
+          network: process.env.NODE_ENV === 'production' ? 'mainnet' : 'testnet',
+          chains: ['base', 'stellar', 'sui', 'monad', 'tron'], // Static fallback
+          baseMode: 'static-config'
+        });
       } finally {
         setLoading(false);
       }
@@ -95,7 +101,7 @@ export default function NetworkStatus() {
                 <>
                   <div className="flex items-center space-x-1 mb-1">
                     <CheckCircle className="w-3 h-3" />
-                    <span>Ethereum: Simple HTLC contracts</span>
+                    <span>Base: 1inch LOP integration</span>
                   </div>
                   <div className="flex items-center space-x-1">
                     <CheckCircle className="w-3 h-3" />
@@ -106,7 +112,7 @@ export default function NetworkStatus() {
                 <>
                   <div className="flex items-center space-x-1 mb-1">
                     <CheckCircle className="w-3 h-3" />
-                    <span>Ethereum: 1inch production infrastructure</span>
+                    <span>Base: 1inch production infrastructure</span>
                   </div>
                   <div className="flex items-center space-x-1">
                     <CheckCircle className="w-3 h-3" />

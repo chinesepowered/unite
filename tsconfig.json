@@ -33,13 +33,13 @@
     ]
   },
   "include": [
+    "app/**/*",
     "src/**/*",
     ".next/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
     "dist",
-    "contracts",
-    "example"
+    "contracts"
   ]
 }

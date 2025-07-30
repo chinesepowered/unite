@@ -49,7 +49,7 @@ export default function HomePage() {
 
     try {
       const result = await apiClient.createDemoSwap({
-        srcChain: 'ethereum',
+        srcChain: 'base',
         dstChain: 'stellar'
       });
       setSelectedOrderId(result.orderId);

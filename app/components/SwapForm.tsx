@@ -15,11 +15,11 @@ interface SwapFormProps {
 
 export default function SwapForm({ onSubmit, loading }: SwapFormProps) {
   const [formData, setFormData] = useState<SwapFormData>({
-    srcChain: 'ethereum',
+    srcChain: 'base',
     dstChain: 'stellar',
     srcToken: '0x0000000000000000000000000000000000000000',
     dstToken: 'native',
-    srcAmount: DEFAULT_AMOUNTS.ethereum,
+    srcAmount: DEFAULT_AMOUNTS.base,
     dstAmount: DEFAULT_AMOUNTS.stellar,
     maker: TEST_ADDRESSES.maker,
   });
