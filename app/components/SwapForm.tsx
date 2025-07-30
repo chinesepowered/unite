@@ -125,7 +125,7 @@ export default function SwapForm({ onSubmit, loading }: SwapFormProps) {
                 value={displayAmounts.srcAmount}
                 onChange={(e) => handleAmountChange('srcAmount', e.target.value)}
                 placeholder="0.0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
               />
             </div>
           </div>
@@ -173,7 +173,7 @@ export default function SwapForm({ onSubmit, loading }: SwapFormProps) {
                 value={displayAmounts.dstAmount}
                 onChange={(e) => handleAmountChange('dstAmount', e.target.value)}
                 placeholder="0.0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
               />
             </div>
           </div>

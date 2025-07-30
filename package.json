@@ -27,7 +27,7 @@
     "next": "15.3.3",
     "axios": "^1.7.0",
     "lucide-react": "^0.400.0",
-    "clsx": "^2.1.0",
+    "clsx": "^2.1.0"
   },
   "devDependencies": {
     "typescript": "^5.0.0",

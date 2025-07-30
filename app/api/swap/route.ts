@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { randomBytes, createHash } from 'crypto';
 import { chainResolver } from '../../lib/chain-resolver';
+import { swapStorage } from '../../lib/swap-storage';
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,15 +41,38 @@ export async function POST(request: NextRequest) {
       createdAt: new Date().toISOString()
     };
 
-    // For hackathon: return the order without actually deploying contracts yet
-    // This allows UI testing while we fix the full blockchain integration
+    // Store the swap details for later execution
+    swapStorage.storeSwap({
+      orderId: swapOrder.orderId,
+      srcChain: swapOrder.srcChainId,
+      dstChain: swapOrder.dstChainId,
+      srcAmount: swapOrder.makingAmount,
+      dstAmount: swapOrder.takingAmount,
+      srcToken: swapOrder.makerAsset,
+      dstToken: swapOrder.takerAsset,
+      maker: swapOrder.maker,
+      secretHash: swapOrder.secretHash,
+      status: swapOrder.status,
+      createdAt: swapOrder.createdAt
+    });
+    
     return NextResponse.json({
       orderId: swapOrder.orderId,
       status: swapOrder.status,
       secretHash: swapOrder.secretHash,
       timelock: swapOrder.timelock,
       message: `Swap order created for ${srcChain} → ${dstChain}`,
-      contracts: chainResolver.getDeploymentStatus()
+      contracts: chainResolver.getDeploymentStatus(),
+      // Include swap details for UI display
+      swapDetails: {
+        srcChain: swapOrder.srcChainId,
+        dstChain: swapOrder.dstChainId,
+        srcAmount: swapOrder.makingAmount,
+        dstAmount: swapOrder.takingAmount,
+        srcToken: swapOrder.makerAsset,
+        dstToken: swapOrder.takerAsset,
+        maker: swapOrder.maker
+      }
     });
 
   } catch (error) {

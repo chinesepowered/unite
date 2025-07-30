@@ -28,7 +28,7 @@ export default function TokenSelector({
     <select
       value={selectedToken}
       onChange={(e) => onTokenSelect(e.target.value)}
-      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
     >
       {tokens.map((token) => (
         <option key={token.address} value={token.address}>
