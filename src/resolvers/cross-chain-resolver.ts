@@ -82,7 +82,7 @@ export class CrossChainResolver {
       sui: {
         chainId: deployments?.sui?.chainId || 'sui-testnet',
         rpcUrl: process.env.SUI_RPC_URL || deployments?.sui?.rpcUrl || 'https://fullnode.testnet.sui.io:443',
-        escrowFactory: deployments?.sui?.packageId,
+        escrowFactory: deployments?.sui?.packageId || process.env.SUI_PACKAGE_ID || '0x04cf15bd22b901053411485b652914f92a2cb1c337e10e5a45a839e1c7ac3f8e',
         supportedTokens: [
           deployments?.sui?.nativeToken || { symbol: 'SUI', address: '0x2::sui::SUI', decimals: 9 }
         ]

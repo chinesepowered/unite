@@ -54,7 +54,9 @@
       "chainId": "sui-testnet",
       "name": "Sui Testnet",
       "rpcUrl": "https://fullnode.testnet.sui.io:443",
-      "packageId": "0x_YOUR_DEPLOYED_SUI_PACKAGE_ID",
+      "packageId": "0x04cf15bd22b901053411485b652914f92a2cb1c337e10e5a45a839e1c7ac3f8e",
+      "explorer": "https://testnet.suivision.xyz",
+      "deploymentTx": "2FiivFEVV9EFkMEKnpBS9BAym3GiJaFgR3t8R7hsKmcs",
       "nativeToken": {
         "symbol": "SUI",
         "address": "0x2::sui::SUI",
