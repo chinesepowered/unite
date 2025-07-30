@@ -72,7 +72,7 @@ export const DEFAULT_AMOUNTS: Record<string, string> = {
 };
 
 export const TEST_ADDRESSES = {
-  maker: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
+  maker: '0x6Bd07000C5F746af69BEe7f151eb30285a6678B2',
   resolver: '0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
 };
 

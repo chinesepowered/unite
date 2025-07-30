@@ -187,30 +187,30 @@ export default function HomePage() {
             {/* Features */}
             <div className="bg-white rounded-xl shadow-lg p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Features</h3>
-              <div className="space-y-2 text-sm">
+              <div className="space-y-2 text-sm text-gray-700">
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>✅ HTLC with hashlock & timelock</span>
+                  <span className="text-gray-700">✅ HTLC with hashlock & timelock</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>✅ Bidirectional swaps</span>
+                  <span className="text-gray-700">✅ Bidirectional swaps</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>✅ Atomic execution</span>
+                  <span className="text-gray-700">✅ Atomic execution</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>✅ Multi-chain support</span>
+                  <span className="text-gray-700">✅ Multi-chain support</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                  <span>🔶 Resolver automation</span>
+                  <span className="text-gray-700">🔶 Resolver automation</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                  <span>🔶 Partial fills (planned)</span>
+                  <span className="text-gray-700">🔶 Partial fills (planned)</span>
                 </div>
               </div>
             </div>

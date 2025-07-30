@@ -21,7 +21,7 @@ export default function SwapForm({ onSubmit, loading }: SwapFormProps) {
     dstToken: 'native',
     srcAmount: DEFAULT_AMOUNTS.base,
     dstAmount: DEFAULT_AMOUNTS.stellar,
-    maker: TEST_ADDRESSES.maker,
+    maker: process.env.NEXT_PUBLIC_DEFAULT_MAKER_ADDRESS || TEST_ADDRESSES.maker,
   });
 
   const [displayAmounts, setDisplayAmounts] = useState({
@@ -189,7 +189,7 @@ export default function SwapForm({ onSubmit, loading }: SwapFormProps) {
             value={formData.maker}
             onChange={(e) => setFormData(prev => ({ ...prev, maker: e.target.value }))}
             placeholder="0x..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
           />
         </div>
 
