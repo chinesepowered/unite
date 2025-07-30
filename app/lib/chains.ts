@@ -2,12 +2,12 @@ import { Chain, Token } from '../types';
 
 export const SUPPORTED_CHAINS: Chain[] = [
   {
-    id: 'ethereum',
-    name: 'Ethereum',
+    id: 'base',
+    name: 'Base',
     symbol: 'ETH',
-    icon: '⚡',
-    color: '#627eea',
-    description: 'The leading smart contract platform'
+    icon: '🔵',
+    color: '#0052ff',
+    description: 'Coinbase L2 with 1inch LOP integration'
   },
   {
     id: 'monad',
@@ -44,9 +44,10 @@ export const SUPPORTED_CHAINS: Chain[] = [
 ];
 
 export const CHAIN_TOKENS: Record<string, Token[]> = {
-  ethereum: [
+  base: [
     { symbol: 'ETH', address: '0x0000000000000000000000000000000000000000', decimals: 18 },
-    { symbol: 'USDC', address: '0xA0b86a33E6441c8C47ed7E37d59D3d4a16D35f73', decimals: 6 },
+    { symbol: 'USDC', address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', decimals: 6 }, // Base USDC
+    { symbol: 'USDbC', address: '0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA', decimals: 6 }, // Bridged USDC
   ],
   monad: [
     { symbol: 'MON', address: 'native', decimals: 18 },
@@ -63,7 +64,7 @@ export const CHAIN_TOKENS: Record<string, Token[]> = {
 };
 
 export const DEFAULT_AMOUNTS: Record<string, string> = {
-  ethereum: '1000000000000000000', // 1 ETH
+  base: '1000000000000000000', // 1 ETH
   monad: '1000000000000000000', // 1 MON
   stellar: '10000000', // 1 XLM (7 decimals)
   sui: '1000000000', // 1 SUI (9 decimals)

@@ -5,6 +5,7 @@ import { Zap, Github, ExternalLink, AlertTriangle } from 'lucide-react';
 import SwapForm from './components/SwapForm';
 import SwapStatus from './components/SwapStatus';
 import SwapHistory from './components/SwapHistory';
+import NetworkStatus from './components/NetworkStatus';
 import { SwapFormData } from './types';
 import apiClient from './lib/api';
 
@@ -144,6 +145,9 @@ export default function HomePage() {
             </div>
           </div>
         )}
+
+        {/* Network Status */}
+        <NetworkStatus />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Panel */}

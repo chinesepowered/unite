@@ -1,14 +1,18 @@
 {
   "testnet": {
-    "ethereum": {
-      "chainId": "11155111",
-      "name": "Sepolia",
-      "rpcUrl": "https://1rpc.io/sepolia",
-      "htlcContract": "0x_YOUR_DEPLOYED_ETH_HTLC_CONTRACT",
+    "base": {
+      "chainId": "84532",
+      "name": "Base Sepolia",
+      "rpcUrl": "https://sepolia.base.org",
+      "lopContract": "0xE53136D9De56672e8D2665C98653AC7b8A60Dc44",
+      "explorer": "https://sepolia.basescan.org",
       "nativeToken": {
         "symbol": "ETH",
         "address": "0x0000000000000000000000000000000000000000",
         "decimals": 18
+      },
+      "tokens": {
+        "USDC": "0x036CbD53842c5426634e7929541eC2318f3dCF7e"
       }
     },
     "monad": {
@@ -36,8 +40,10 @@
     "stellar": {
       "chainId": "stellar-testnet",
       "name": "Stellar Testnet",
-      "rpcUrl": "https://horizon-testnet.stellar.org",
-      "contractId": "C_YOUR_DEPLOYED_STELLAR_CONTRACT_ID",
+      "rpcUrl": "https://soroban-testnet.stellar.org:443",
+      "contractId": "CAPWY2XT62L3A3VBPVS4IOHDQJDULCLR2QNZ5724PBOROLVKQXYH6ZZ7",
+      "explorer": "https://stellar.expert/explorer/testnet",
+      "deploymentTx": "c3166ed3c2cc2db646f1a5229df18ec37cbf09d8da92f26781fb522360e08d1f",
       "nativeToken": {
         "symbol": "XLM",
         "address": "native",
@@ -57,16 +63,20 @@
     }
   },
   "mainnet": {
-    "ethereum": {
-      "chainId": "1",
-      "name": "Ethereum Mainnet",
-      "rpcUrl": "https://1rpc.io/eth",
-      "escrowFactory": "0x_1INCH_ESCROW_FACTORY_ADDRESS",
-      "resolver": "0x_1INCH_RESOLVER_ADDRESS",
+    "base": {
+      "chainId": "8453",
+      "name": "Base Mainnet",
+      "rpcUrl": "https://mainnet.base.org",
+      "lopContract": null,
+      "explorer": "https://basescan.org",
       "nativeToken": {
         "symbol": "ETH",
         "address": "0x0000000000000000000000000000000000000000",
         "decimals": 18
+      },
+      "tokens": {
+        "USDC": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "USDbC": "0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA"
       }
     },
     "monad": {

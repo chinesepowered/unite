@@ -1,0 +1,17 @@
+chineseman@MacBookAir stellar % stellar contract deploy \  
+  --wasm target/wasm32v1-none/release/htlc_escrow.wasm \
+  --source hackathon \
+  --rpc-url https://soroban-testnet.stellar.org:443 \
+  --network-passphrase "Test SDF Network ; September 2015"
+ℹ️  Simulating install transaction…
+ℹ️  Signing transaction: decc9b3f15385a20ea18c087a8fe18069669ca206134104b64df11f1a0d8601d
+🌎 Submitting install transaction…
+ℹ️  Using wasm hash d7232b0e455fea0cf3450b18dfbcfba91e1157e2b35b8794781ed2ca77fe1ed2
+ℹ️  Simulating deploy transaction…
+ℹ️  Transaction hash is c3166ed3c2cc2db646f1a5229df18ec37cbf09d8da92f26781fb522360e08d1f
+🔗 https://stellar.expert/explorer/testnet/tx/c3166ed3c2cc2db646f1a5229df18ec37cbf09d8da92f26781fb522360e08d1f
+ℹ️  Signing transaction: c3166ed3c2cc2db646f1a5229df18ec37cbf09d8da92f26781fb522360e08d1f
+🌎 Submitting deploy transaction…
+🔗 https://stellar.expert/explorer/testnet/contract/CAPWY2XT62L3A3VBPVS4IOHDQJDULCLR2QNZ5724PBOROLVKQXYH6ZZ7
+✅ Deployed!
+CAPWY2XT62L3A3VBPVS4IOHDQJDULCLR2QNZ5724PBOROLVKQXYH6ZZ7

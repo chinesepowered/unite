@@ -43,3 +43,6 @@ next-env.d.ts
 # contract builds
 /contracts/stellar/target
 /contracts/sui/build
+
+# IMPORTANT
+/contracts/stellar/.stellar

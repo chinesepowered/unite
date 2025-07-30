@@ -1,6 +1,6 @@
 import { randomBytes, createHash } from 'crypto';
 import { ChainAdapter, SwapOrder, SwapResult, SwapStatus, SwapState, EscrowDetails } from '../core/types';
-import { EthereumAdapter } from '../chains/ethereum-dual';
+import { BaseAdapter } from '../chains/base';
 import { MonadAdapter } from '../chains/monad';
 import { StellarAdapter } from '../chains/stellar';
 import { SuiAdapter } from '../chains/sui';  
@@ -20,9 +20,9 @@ export class CrossChainResolver {
     
     const configs = this.buildChainConfigs(deployments);
 
-    // Initialize chain adapters with proper HTLC implementations
-    // Ethereum uses 1inch escrow factory
-    this.chains.set('ethereum', new EthereumAdapter(configs.ethereum, process.env.ETH_PRIVATE_KEY));
+    // Initialize chain adapters with proper implementations
+    // Base uses 1inch Limit Order Protocol
+    this.chains.set('base', new BaseAdapter(configs.base, process.env.BASE_PRIVATE_KEY));
     
     // Non-1inch chains use custom HTLC contracts
     this.chains.set('monad', new MonadAdapter(configs.monad, process.env.MONAD_PRIVATE_KEY));
@@ -53,13 +53,14 @@ export class CrossChainResolver {
 
   private buildChainConfigs(deployments: any) {
     return {
-      ethereum: {
-        chainId: deployments?.ethereum?.chainId || '11155111', // Default to Sepolia
-        rpcUrl: process.env.ETH_RPC_URL || deployments?.ethereum?.rpcUrl || 'https://1rpc.io/sepolia',
-        escrowFactory: deployments?.ethereum?.htlcContract || deployments?.ethereum?.escrowFactory || process.env.ETH_ESCROW_FACTORY,
-        resolver: deployments?.ethereum?.resolver,
+      base: {
+        chainId: deployments?.base?.chainId || '84532', // Base Sepolia testnet
+        rpcUrl: process.env.BASE_RPC_URL || deployments?.base?.rpcUrl || 'https://sepolia.base.org',
+        escrowFactory: deployments?.base?.lopContract || process.env.BASE_LOP_CONTRACT || '0xE53136D9De56672e8D2665C98653AC7b8A60Dc44', // Base Sepolia LOP
+        resolver: deployments?.base?.resolver,
         supportedTokens: [
-          deployments?.ethereum?.nativeToken || { symbol: 'ETH', address: '0x0000000000000000000000000000000000000000', decimals: 18 }
+          deployments?.base?.nativeToken || { symbol: 'ETH', address: '0x0000000000000000000000000000000000000000', decimals: 18 },
+          { symbol: 'USDC', address: '0x036CbD53842c5426634e7929541eC2318f3dCF7e', decimals: 6 } // Base Sepolia USDC
         ]
       },
       monad: {
@@ -72,8 +73,8 @@ export class CrossChainResolver {
       },
       stellar: {
         chainId: deployments?.stellar?.chainId || 'stellar-testnet',
-        rpcUrl: process.env.STELLAR_RPC_URL || deployments?.stellar?.rpcUrl || 'https://horizon-testnet.stellar.org',
-        escrowFactory: deployments?.stellar?.contractId,
+        rpcUrl: process.env.STELLAR_RPC_URL || deployments?.stellar?.rpcUrl || 'https://soroban-testnet.stellar.org:443',
+        escrowFactory: deployments?.stellar?.contractId || process.env.STELLAR_CONTRACT_ID || 'CAPWY2XT62L3A3VBPVS4IOHDQJDULCLR2QNZ5724PBOROLVKQXYH6ZZ7',
         supportedTokens: [
           deployments?.stellar?.nativeToken || { symbol: 'XLM', address: 'native', decimals: 7 }
         ]
@@ -495,6 +496,29 @@ export class CrossChainResolver {
   }
 
   // Bidirectional swap helpers
+  async createBaseToChainSwap(
+    dstChain: string,
+    srcToken: string,
+    dstToken: string,
+    srcAmount: bigint,
+    dstAmount: bigint,
+    maker: string
+  ): Promise<SwapState> {
+    return this.createSwap('base', dstChain, srcToken, dstToken, srcAmount, dstAmount, maker);
+  }
+
+  async createChainToBaseSwap(
+    srcChain: string,
+    srcToken: string,
+    dstToken: string,
+    srcAmount: bigint,
+    dstAmount: bigint,
+    maker: string
+  ): Promise<SwapState> {
+    return this.createSwap(srcChain, 'base', srcToken, dstToken, srcAmount, dstAmount, maker);
+  }
+
+  // Legacy methods for backward compatibility
   async createEthToChainSwap(
     dstChain: string,
     srcToken: string,
@@ -503,7 +527,7 @@ export class CrossChainResolver {
     dstAmount: bigint,
     maker: string
   ): Promise<SwapState> {
-    return this.createSwap('ethereum', dstChain, srcToken, dstToken, srcAmount, dstAmount, maker);
+    return this.createBaseToChainSwap(dstChain, srcToken, dstToken, srcAmount, dstAmount, maker);
   }
 
   async createChainToEthSwap(
@@ -514,6 +538,6 @@ export class CrossChainResolver {
     dstAmount: bigint,
     maker: string
   ): Promise<SwapState> {
-    return this.createSwap(srcChain, 'ethereum', srcToken, dstToken, srcAmount, dstAmount, maker);
+    return this.createChainToBaseSwap(srcChain, srcToken, dstToken, srcAmount, dstAmount, maker);
   }
 }
