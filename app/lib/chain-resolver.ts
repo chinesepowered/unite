@@ -54,7 +54,7 @@ export const DEPLOYED_CONTRACTS: DeployedContracts = {
   },
   monad: {
     contractAddress: '0x0A027767aC1e4aA5474A1B98C3eF730C3994E67b',
-    rpcUrl: 'https://testnet1.monad.xyz',
+    rpcUrl: 'https://testnet-rpc.monad.xyz',
     explorer: 'https://testnet.monadexplorer.com'
   },
   tron: {

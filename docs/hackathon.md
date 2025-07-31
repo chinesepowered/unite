@@ -14,7 +14,7 @@ Stretch goals (not hard requirements):
 - Relayer and resolver
 
 
-Secondary challenge:
+Secondary challenge (OUTDATED, DO NOT DO THIS!):
 1inch offers a variety of REST APIs that make building onchain applications simpler. Create a full dApp using as many 1inch APIs as possible.
 Example integration points:
 - Add swap functionality with one of our swap protocols (1inch Cross-chain Swap (Fusion+), Intent-based Swap (Fusion), Classic Swap, or Limit Order protocol)
