@@ -74,7 +74,7 @@ export default function SwapStatus({ orderId, onClose }: SwapStatusProps) {
 
         // Continue polling if swap is not in a final state
         if (!['completed', 'failed', 'cancelled'].includes(swapData.status)) {
-          interval = setTimeout(fetchSwapStatus, 2000);
+          interval = setTimeout(fetchSwapStatus, 5000); // 5 seconds instead of 2
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch swap status');
@@ -197,13 +197,13 @@ export default function SwapStatus({ orderId, onClose }: SwapStatusProps) {
               {srcChain?.icon}
             </div>
             <div>
-              <div className="font-medium">{srcChain?.name}</div>
-              <div className="text-sm text-gray-600">{swap.srcToken}</div>
+              <div className="font-medium text-gray-900">{srcChain?.name}</div>
+              <div className="text-sm text-gray-700">{swap.makerAsset === '0x0000000000000000000000000000000000000000' ? 'ETH' : swap.makerAsset}</div>
             </div>
           </div>
           <div className="text-right">
-            <div className="font-mono text-sm">{swap.srcAmount}</div>
-            <div className="text-xs text-gray-500">Amount</div>
+            <div className="font-mono text-sm text-gray-900">{(parseFloat(swap.makingAmount) / 1e18).toFixed(4)}</div>
+            <div className="text-xs text-gray-700">Amount</div>
           </div>
         </div>
 
@@ -220,13 +220,13 @@ export default function SwapStatus({ orderId, onClose }: SwapStatusProps) {
               {dstChain?.icon}
             </div>
             <div>
-              <div className="font-medium">{dstChain?.name}</div>
-              <div className="text-sm text-gray-600">{swap.dstToken}</div>
+              <div className="font-medium text-gray-900">{dstChain?.name}</div>
+              <div className="text-sm text-gray-700">{swap.takerAsset === 'native' ? dstChain?.symbol : swap.takerAsset}</div>
             </div>
           </div>
           <div className="text-right">
-            <div className="font-mono text-sm">{swap.dstAmount}</div>
-            <div className="text-xs text-gray-500">Amount</div>
+            <div className="font-mono text-sm text-gray-900">{(parseFloat(swap.takingAmount) / 1e15).toFixed(4)}</div>
+            <div className="text-xs text-gray-700">Amount</div>
           </div>
         </div>
       </div>
@@ -234,12 +234,12 @@ export default function SwapStatus({ orderId, onClose }: SwapStatusProps) {
       {/* Order Details */}
       <div className="space-y-3 mb-6 p-4 bg-gray-50 rounded-lg">
         <div className="flex justify-between text-sm">
-          <span className="text-gray-600">Order ID:</span>
-          <span className="font-mono">{swap.orderId}</span>
+          <span className="text-gray-700">Order ID:</span>
+          <span className="font-mono text-gray-900">{swap.orderId}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-gray-600">Maker:</span>
-          <span className="font-mono">{swap.maker}</span>
+          <span className="text-gray-700">Maker:</span>
+          <span className="font-mono text-gray-900">{swap.maker}</span>
         </div>
         {swap.srcEscrow && (
           <div className="flex justify-between text-sm">
@@ -260,8 +260,8 @@ export default function SwapStatus({ orderId, onClose }: SwapStatusProps) {
           </div>
         )}
         <div className="flex justify-between text-sm">
-          <span className="text-gray-600">Created:</span>
-          <span>{new Date(swap.createdAt).toLocaleString()}</span>
+          <span className="text-gray-700">Created:</span>
+          <span className="text-gray-900">{new Date(swap.createdAt).toLocaleString()}</span>
         </div>
       </div>
 
@@ -276,10 +276,10 @@ export default function SwapStatus({ orderId, onClose }: SwapStatusProps) {
             {executing ? (
               <div className="flex items-center justify-center space-x-2">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Executing...</span>
+                <span>Executing Real Blockchain Transactions...</span>
               </div>
             ) : (
-              'Execute Swap'
+              'Execute Real Cross-Chain Swap'
             )}
           </button>
         )}

@@ -43,7 +43,7 @@ export const apiClient = {
     txHash?: string;
     error?: string;
   }> => {
-    const response = await api.post(`/swap/${orderId}/execute`);
+    const response = await api.post(`/execute-swap?orderId=${orderId}`);
     return response.data;
   },
 
@@ -59,7 +59,7 @@ export const apiClient = {
 
   // Get swap status
   getSwap: async (orderId: string): Promise<SwapOrder> => {
-    const response = await api.get(`/swap/${orderId}`);
+    const response = await api.get(`/swap-status?orderId=${orderId}`);
     return response.data;
   },
 
