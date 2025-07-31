@@ -164,7 +164,7 @@ POST /api/swap
   "dstToken": "native",
   "srcAmount": "1000000000000000000",
   "dstAmount": "10000000",
-  "maker": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+  "maker": "0xe3B24b93C18eD1B7eEa9e07b3B03D03259f3942e"
 }
 
 # Execute a swap (resolver action)

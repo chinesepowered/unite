@@ -26,7 +26,7 @@ describe('Cross-Chain Integration Tests', () => {
         'native', // XLM
         BigInt('1000000000000000000'), // 1 ETH
         BigInt('10000000'), // 1 XLM
-        '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'
+        '0xe3B24b93C18eD1B7eEa9e07b3B03D03259f3942e'
       );
 
       expect(swap.order.orderId).toBeDefined();
@@ -44,7 +44,7 @@ describe('Cross-Chain Integration Tests', () => {
         '0x2::sui::SUI',
         BigInt('1000000000000000000'),
         BigInt('1000000000'),
-        '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'
+        '0xe3B24b93C18eD1B7eEa9e07b3B03D03259f3942e'
       );
 
       const retrievedSwap = resolver.getSwapState(swap.order.orderId);
@@ -61,7 +61,7 @@ describe('Cross-Chain Integration Tests', () => {
         'native',
         BigInt('1000000000000000000'),
         BigInt('1000000'),
-        '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'
+        '0xe3B24b93C18eD1B7eEa9e07b3B03D03259f3942e'
       );
 
       expect(ethToChain.order.srcChainId).toBe('ethereum');
@@ -74,7 +74,7 @@ describe('Cross-Chain Integration Tests', () => {
         '0x0000000000000000000000000000000000000000',
         BigInt('1000000000000000000'),
         BigInt('1000000000000000000'),
-        '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'
+        '0xe3B24b93C18eD1B7eEa9e07b3B03D03259f3942e'
       );
 
       expect(chainToEth.order.srcChainId).toBe('monad');
@@ -91,7 +91,7 @@ describe('Cross-Chain Integration Tests', () => {
         'native',
         BigInt('1000000000000000000'),
         BigInt('10000000'),
-        '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'
+        '0xe3B24b93C18eD1B7eEa9e07b3B03D03259f3942e'
       );
 
       // Initial state
@@ -120,7 +120,7 @@ describe('Cross-Chain Integration Tests', () => {
         'native',
         BigInt('1000000000000000000'),
         BigInt('10000000'),
-        '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'
+        '0xe3B24b93C18eD1B7eEa9e07b3B03D03259f3942e'
       );
 
       const result = await resolver.executeSwap(swap.order.orderId);
@@ -140,7 +140,7 @@ describe('Cross-Chain Integration Tests', () => {
         '0x2::sui::SUI',
         BigInt('1000000000000000000'),
         BigInt('1000000000'),
-        '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'
+        '0xe3B24b93C18eD1B7eEa9e07b3B03D03259f3942e'
       );
 
       // Wait for timelock to expire (in real test, would mock time)
@@ -162,7 +162,7 @@ describe('Cross-Chain Integration Tests', () => {
           'token2',
           BigInt('1000'),
           BigInt('1000'),
-          '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'
+          '0xe3B24b93C18eD1B7eEa9e07b3B03D03259f3942e'
         )
       ).rejects.toThrow('Unsupported chain');
     });
@@ -196,7 +196,7 @@ describe('Cross-Chain Integration Tests', () => {
           dst === 'ethereum' ? '0x0000000000000000000000000000000000000000' : 'native',
           BigInt('1000000000000000000'),
           BigInt('1000000000'),
-          '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'
+          '0xe3B24b93C18eD1B7eEa9e07b3B03D03259f3942e'
         );
 
         expect(swap.order.srcChainId).toBe(src);

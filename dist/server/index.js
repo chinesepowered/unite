@@ -295,7 +295,7 @@ app.post('/api/demo/swap', async (req, res) => {
         dstToken = 'native', // XLM
         srcAmount = '1000000000000000000', // 1 ETH in wei
         dstAmount = '10000000', // 1 XLM in stroops
-        maker = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266' // Default test address
+        maker = '0xe3B24b93C18eD1B7eEa9e07b3B03D03259f3942e' // Default test address
          } = req.body;
         console.log(`Creating demo swap: ${srcChain} -> ${dstChain}`);
         // Create swap
@@ -332,7 +332,7 @@ app.post('/api/demo/partial-swap', async (req, res) => {
         dstToken = 'native', // XLM
         srcAmount = '4000000000000000000', // 4 ETH in wei
         dstAmount = '40000000', // 4 XLM in stroops
-        maker = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', // Default test address
+        maker = '0xe3B24b93C18eD1B7eEa9e07b3B03D03259f3942e', // Default test address
         partCount = 4 } = req.body;
         console.log(`Creating demo partial swap: ${srcChain} -> ${dstChain} with ${partCount} parts`);
         // Create partial swap
