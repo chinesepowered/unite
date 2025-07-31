@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Access global storage set by swap creation
+function getGlobalSwaps() {
+  return (global as any).recentSwaps || new Map();
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -11,29 +16,24 @@ export async function GET(request: NextRequest) {
     
     console.log(`🔍 GET /api/swap-status?orderId=${orderId}`);
     
-    // Return the actual swap data for demo
-    return NextResponse.json({
-      orderId,
-      status: 'created',
-      srcChain: 'base',
-      dstChain: 'monad', 
-      makingAmount: '1000000000000000000',
-      takingAmount: '1000000000000000',
-      makerAsset: '0x0000000000000000000000000000000000000000',
-      takerAsset: 'native',
-      maker: '0x6Bd07000C5F746af69BEe7f151eb30285a6678B2',
-      secretHash: '0xae47a9c4bf9522a8ecd34a82b6a69ffbd87468b8de9a5dd0f8edb27b3dad83e8',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      contracts: {
-        srcContract: '0xE53136D9De56672e8D2665C98653AC7b8A60Dc44', // Base LOP
-        dstContract: '0x0A027767aC1e4aA5474A1B98C3eF730C3994E67b'  // Monad HTLC
-      },
-      timelock: {
-        srcCancellation: (Math.floor(Date.now() / 1000) + 3600).toString(),
-        dstCancellation: (Math.floor(Date.now() / 1000) + 1800).toString()
-      }
-    });
+    // Check if we have stored data for this swap
+    const globalSwaps = getGlobalSwaps();
+    const storedSwap = globalSwaps.get(orderId);
+    if (storedSwap) {
+      console.log(`✅ Found stored swap data for ${orderId}`);
+      return NextResponse.json(storedSwap);
+    }
+    
+    console.log(`❌ No stored swap data found for ${orderId}`);
+    
+    // If not found but looks like valid orderId, return not found
+    // (We only return data for swaps that were actually created and stored)
+    
+    // Invalid orderId format
+    return NextResponse.json(
+      { error: `Swap ${orderId} not found` },
+      { status: 404 }
+    );
   } catch (error) {
     console.error('❌ Error getting swap status:', error);
     return NextResponse.json(

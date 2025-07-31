@@ -202,7 +202,7 @@ export default function SwapStatus({ orderId, onClose }: SwapStatusProps) {
             </div>
           </div>
           <div className="text-right">
-            <div className="font-mono text-sm text-gray-900">{(parseFloat(swap.makingAmount) / 1e18).toFixed(4)}</div>
+            <div className="font-mono text-sm text-gray-900">{(parseFloat(swap.makingAmount) / 1e18).toFixed(6)}</div>
             <div className="text-xs text-gray-700">Amount</div>
           </div>
         </div>
@@ -225,7 +225,7 @@ export default function SwapStatus({ orderId, onClose }: SwapStatusProps) {
             </div>
           </div>
           <div className="text-right">
-            <div className="font-mono text-sm text-gray-900">{(parseFloat(swap.takingAmount) / 1e15).toFixed(4)}</div>
+            <div className="font-mono text-sm text-gray-900">{(parseFloat(swap.takingAmount) / 1e18).toFixed(6)}</div>
             <div className="text-xs text-gray-700">Amount</div>
           </div>
         </div>

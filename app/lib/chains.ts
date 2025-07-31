@@ -64,11 +64,11 @@ export const CHAIN_TOKENS: Record<string, Token[]> = {
 };
 
 export const DEFAULT_AMOUNTS: Record<string, string> = {
-  base: '1000000000000000000', // 1 ETH
-  monad: '1000000000000000000', // 1 MON
-  stellar: '10000000', // 1 XLM (7 decimals)
-  sui: '1000000000', // 1 SUI (9 decimals)
-  tron: '1000000', // 1 TRX (6 decimals)
+  base: '1000000000000000', // 0.001 ETH
+  monad: '1000000000000000', // 0.001 MON  
+  stellar: '10000', // 0.001 XLM (7 decimals)
+  sui: '1000000', // 0.001 SUI (9 decimals)
+  tron: '1000', // 0.001 TRX (6 decimals)
 };
 
 export const TEST_ADDRESSES = {

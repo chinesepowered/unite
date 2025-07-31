@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { chainResolver } from '../../lib/chain-resolver';
 import { getChainAdapter } from '../../lib/real-chain-adapters';
-import { swapStorage } from '../../lib/swap-storage';
 import { randomBytes, createHash } from 'crypto';
+
+// Access global storage set by swap creation (avoiding hanging imports)
+function getGlobalSwaps() {
+  return (global as any).recentSwaps || new Map();
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,9 +18,11 @@ export async function POST(request: NextRequest) {
     
     console.log(`🚀 Executing REAL cross-chain swap: ${orderId}`);
     
-    // Retrieve the stored swap details
-    const storedSwap = swapStorage.getSwap(orderId);
+    // Retrieve the stored swap details from global storage
+    const globalSwaps = getGlobalSwaps();
+    const storedSwap = globalSwaps.get(orderId);
     if (!storedSwap) {
+      console.log(`❌ Swap ${orderId} not found in global storage`);
       return NextResponse.json(
         { 
           success: false, 
@@ -39,10 +44,10 @@ export async function POST(request: NextRequest) {
       orderId: storedSwap.orderId,
       srcChain: storedSwap.srcChain,
       dstChain: storedSwap.dstChain,
-      srcAmount: storedSwap.srcAmount,
-      dstAmount: storedSwap.dstAmount,
-      srcToken: storedSwap.srcToken,
-      dstToken: storedSwap.dstToken,
+      srcAmount: storedSwap.makingAmount,    // Use the correct field names from global storage
+      dstAmount: storedSwap.takingAmount,    // Use the correct field names from global storage
+      srcToken: storedSwap.makerAsset,
+      dstToken: storedSwap.takerAsset,
       maker: storedSwap.maker,
       secretHash: storedSwap.secretHash,
       secret: secret
@@ -99,18 +104,21 @@ export async function POST(request: NextRequest) {
       errors.push(`${swapOrder.dstChain}: ${error instanceof Error ? error.message : String(error)}`);
     }
 
-    // Update swap status
+    // Update swap status in global storage
     if (results.length > 0 && errors.length === 0) {
       // Both chains succeeded
-      swapStorage.updateSwapStatus(orderId, 'completed');
+      storedSwap.status = 'completed';
+      globalSwaps.set(orderId, storedSwap);
       console.log(`🎉 Swap ${orderId} completed successfully!`);
     } else if (results.length > 0) {
       // Partial success
-      swapStorage.updateSwapStatus(orderId, results.length === 1 ? 'src_deployed' : 'dst_deployed');
+      storedSwap.status = results.length === 1 ? 'src_deployed' : 'dst_deployed';
+      globalSwaps.set(orderId, storedSwap);
       console.log(`⚠️ Swap ${orderId} partially completed`);
     } else {
       // Complete failure
-      swapStorage.updateSwapStatus(orderId, 'failed');
+      storedSwap.status = 'failed';
+      globalSwaps.set(orderId, storedSwap);
       console.log(`💀 Swap ${orderId} failed completely`);
     }
 

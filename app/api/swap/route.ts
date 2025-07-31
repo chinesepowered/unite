@@ -55,6 +55,33 @@ export async function POST(request: NextRequest) {
       status: swapOrder.status,
       createdAt: swapOrder.createdAt
     });
+
+    // Store for status endpoint in global (since we can't use imports that hang)
+    (global as any).recentSwaps = (global as any).recentSwaps || new Map();
+    (global as any).recentSwaps.set(swapOrder.orderId, {
+      orderId: swapOrder.orderId,
+      status: swapOrder.status,
+      srcChain: swapOrder.srcChainId,
+      dstChain: swapOrder.dstChainId,
+      makingAmount: swapOrder.makingAmount,    // REAL form amounts
+      takingAmount: swapOrder.takingAmount,    // REAL form amounts
+      makerAsset: swapOrder.makerAsset,
+      takerAsset: swapOrder.takerAsset,
+      maker: swapOrder.maker,
+      secretHash: swapOrder.secretHash,
+      createdAt: swapOrder.createdAt,
+      updatedAt: swapOrder.createdAt,
+      contracts: {
+        srcContract: '0xE53136D9De56672e8D2665C98653AC7b8A60Dc44',
+        dstContract: '0x0A027767aC1e4aA5474A1B98C3eF730C3994E67b'
+      },
+      timelock: {
+        srcCancellation: swapOrder.timelock.srcCancellation,
+        dstCancellation: swapOrder.timelock.dstCancellation
+      }
+    });
+    
+    console.log(`📝 Stored swap data for status endpoint: ${swapOrder.orderId}`);
     
     return NextResponse.json({
       orderId: swapOrder.orderId,
