@@ -347,11 +347,82 @@ export class SuiAdapter {
   }
 }
 
+// Monad adapter using deployed HTLC contract
+export class MonadAdapter {
+  private provider: ethers.JsonRpcProvider;
+  private wallet: ethers.Wallet;
+  private htlcContract: ethers.Contract;
+
+  constructor() {
+    this.provider = new ethers.JsonRpcProvider('https://testnet-rpc.monad.xyz');
+    
+    const privateKey = process.env.MONAD_PRIVATE_KEY;
+    if (!privateKey) {
+      throw new Error('MONAD_PRIVATE_KEY environment variable required');
+    }
+    
+    this.wallet = new ethers.Wallet(privateKey, this.provider);
+    
+    // Deployed HTLC contract on Monad testnet
+    const htlcAbi = [
+      'function createEscrow(bytes32 secretHash, uint256 timelock, address receiver, string calldata orderId) external payable returns(uint256)',
+      'function claimEscrow(uint256 escrowId, string calldata secret) external',
+      'function refundEscrow(uint256 escrowId) external'
+    ];
+    
+    this.htlcContract = new ethers.Contract(
+      '0x0A027767aC1e4aA5474A1B98C3eF730C3994E67b',
+      htlcAbi,
+      this.wallet
+    );
+  }
+
+  async createHTLC(order: SwapOrder): Promise<TransactionResult> {
+    try {
+      console.log(`🎯 Creating REAL Monad HTLC using deployed contract`);
+      
+      const amount = ethers.parseEther(order.dstAmount);
+      console.log(`💰 Monad HTLC: ${order.dstAmount} MON for order ${order.orderId}`);
+      
+      const tx = await this.htlcContract.createEscrow(
+        order.secretHash,
+        Math.floor(Date.now() / 1000 + 3600), // 1 hour timelock
+        order.maker,
+        order.orderId,
+        { value: amount }
+      );
+
+      await tx.wait();
+      console.log(`✅ Monad HTLC contract called successfully`);
+
+      return {
+        txHash: tx.hash,
+        explorerUrl: `https://testnet.monadexplorer.com/tx/${tx.hash}`,
+        success: true
+      };
+    } catch (error) {
+      return {
+        txHash: '',
+        explorerUrl: '',
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }
+
+  async getBalance(): Promise<string> {
+    const balance = await this.provider.getBalance(this.wallet.address);
+    return ethers.formatEther(balance);
+  }
+}
+
 // Chain adapter factory
 export function getChainAdapter(chainId: string) {
   switch (chainId) {
     case 'base':
       return new BaseAdapter();
+    case 'monad':
+      return new MonadAdapter();
     case 'stellar':
       return new StellarAdapter();
     case 'sui':

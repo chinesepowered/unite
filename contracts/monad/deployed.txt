@@ -1,0 +1,47 @@
+[block:28652056 txIndex:62]from: 0x6bd...678b2to: HTLCEscrow.(constructor)value: 0 weidata: 0x608...678b2logs: 1hash: 0x139...3e77b
+status	0x1 Transaction mined and execution succeed
+transaction hash	0xbad85082f27dc8c0015788e08c979af279cc5f95b55a02033810dabea709ab16
+block hash	0x139713c38ef1e1048ff4b131f53c3ac7903f70e2e27803ad4d1f4b4b43f3e77b
+block number	28652056
+contract address	0x0a027767ac1e4aa5474a1b98c3ef730c3994e67b
+from	0x6Bd07000C5F746af69BEe7f151eb30285a6678B2
+to	HTLCEscrow.(constructor)
+gas	3610828 gas
+transaction cost	3610828 gas 
+input	0x608...678b2
+decoded input	{
+	"address initialOwner": "0x6Bd07000C5F746af69BEe7f151eb30285a6678B2"
+}
+decoded output	 - 
+logs	[
+	{
+		"from": "0x0a027767ac1e4aa5474a1b98c3ef730c3994e67b",
+		"topic": "0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0",
+		"event": "OwnershipTransferred",
+		"args": {
+			"0": "0x0000000000000000000000000000000000000000",
+			"1": "0x6Bd07000C5F746af69BEe7f151eb30285a6678B2"
+		}
+	}
+]
+raw logs	[
+  {
+    "address": "0x0a027767ac1e4aa5474a1b98c3ef730c3994e67b",
+    "topics": [
+      "0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0",
+      "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "0x0000000000000000000000006bd07000c5f746af69bee7f151eb30285a6678b2"
+    ],
+    "data": "0x",
+    "blockHash": "0x139713c38ef1e1048ff4b131f53c3ac7903f70e2e27803ad4d1f4b4b43f3e77b",
+    "blockNumber": "0x1b53218",
+    "transactionHash": "0xbad85082f27dc8c0015788e08c979af279cc5f95b55a02033810dabea709ab16",
+    "transactionIndex": "0x3e",
+    "logIndex": "0x8c",
+    "removed": false
+  }
+]
+
+
+https://testnet.monadexplorer.com/tx/0xbad85082f27dc8c0015788e08c979af279cc5f95b55a02033810dabea709ab16
+https://testnet.monadexplorer.com/address/0x0A027767aC1e4aA5474A1B98C3eF730C3994E67b
