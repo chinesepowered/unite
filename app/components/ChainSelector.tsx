@@ -30,6 +30,7 @@ export default function ChainSelector({
         {availableChains.map((chain) => (
           <button
             key={chain.id}
+            type="button"
             onClick={() => onChainSelect(chain.id)}
             className={clsx(
               'chain-card p-4 rounded-lg border-2 text-left transition-all',

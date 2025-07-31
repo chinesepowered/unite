@@ -53,8 +53,9 @@ export const DEPLOYED_CONTRACTS: DeployedContracts = {
     explorer: 'https://testnet.suivision.xyz'
   },
   monad: {
+    contractAddress: '0x0A027767aC1e4aA5474A1B98C3eF730C3994E67b',
     rpcUrl: 'https://testnet1.monad.xyz',
-    explorer: 'https://testnet.monad.xyz'
+    explorer: 'https://testnet.monadexplorer.com'
   },
   tron: {
     rpcUrl: 'https://api.shasta.trongrid.io',
@@ -76,7 +77,8 @@ export class SimplifiedChainResolver {
       rpcUrl: contract.rpcUrl,
       contractAddress: 'contractId' in contract ? contract.contractId :
                      'lopContract' in contract ? contract.lopContract :
-                     'packageId' in contract ? contract.packageId : undefined,
+                     'packageId' in contract ? contract.packageId :
+                     'contractAddress' in contract ? contract.contractAddress : undefined,
       explorer: contract.explorer
     };
   }
@@ -86,8 +88,8 @@ export class SimplifiedChainResolver {
     const config = this.getChainConfig(chainId);
     if (!config) return false;
     
-    // Base, Stellar, and Sui have deployed contracts
-    return ['base', 'stellar', 'sui'].includes(chainId);
+    // Base, Stellar, Sui, and Monad have deployed contracts
+    return ['base', 'stellar', 'sui', 'monad'].includes(chainId);
   }
 
   // Get deployment status for all chains
@@ -109,8 +111,8 @@ export class SimplifiedChainResolver {
         type: 'HTLC Move'
       },
       monad: {
-        status: 'pending',
-        contract: null,
+        status: 'deployed',
+        contract: '0x0A027767aC1e4aA5474A1B98C3eF730C3994E67b',
         type: 'HTLC EVM'
       },
       tron: {

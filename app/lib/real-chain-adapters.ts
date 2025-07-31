@@ -354,7 +354,17 @@ export class MonadAdapter {
   private htlcContract: ethers.Contract;
 
   constructor() {
-    this.provider = new ethers.JsonRpcProvider('https://testnet-rpc.monad.xyz');
+    // Try multiple Monad testnet RPC endpoints
+    const rpcUrls = [
+      'https://testnet1.monad.xyz',
+      'https://testnet-rpc.monad.xyz',
+      'https://rpc-testnet.monad.xyz'
+    ];
+    
+    this.provider = new ethers.JsonRpcProvider(rpcUrls[0], undefined, {
+      timeout: 10000, // 10 second timeout
+      pollingInterval: 5000
+    });
     
     const privateKey = process.env.MONAD_PRIVATE_KEY;
     if (!privateKey) {
@@ -384,15 +394,28 @@ export class MonadAdapter {
       const amount = ethers.parseEther(order.dstAmount);
       console.log(`💰 Monad HTLC: ${order.dstAmount} MON for order ${order.orderId}`);
       
-      const tx = await this.htlcContract.createEscrow(
+      // Add timeout to contract call
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Monad RPC timeout after 15 seconds')), 15000);
+      });
+      
+      const contractCall = this.htlcContract.createEscrow(
         order.secretHash,
         Math.floor(Date.now() / 1000 + 3600), // 1 hour timelock
         order.maker,
         order.orderId,
-        { value: amount }
+        { value: amount, gasLimit: 500000 } // Add explicit gas limit
       );
 
-      await tx.wait();
+      const tx = await Promise.race([contractCall, timeoutPromise]);
+      
+      // Wait for transaction with timeout
+      const waitPromise = tx.wait();
+      const waitTimeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Transaction wait timeout after 30 seconds')), 30000);
+      });
+      
+      await Promise.race([waitPromise, waitTimeoutPromise]);
       console.log(`✅ Monad HTLC contract called successfully`);
 
       return {
@@ -401,6 +424,7 @@ export class MonadAdapter {
         success: true
       };
     } catch (error) {
+      console.error('Monad HTLC error:', error);
       return {
         txHash: '',
         explorerUrl: '',

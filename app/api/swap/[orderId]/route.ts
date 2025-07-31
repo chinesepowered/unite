@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { swapStorage } from '../../../lib/swap-storage';
+import { chainResolver } from '../../../lib/chain-resolver';
 
 interface RouteParams {
   params: {
@@ -10,26 +12,37 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { orderId } = params;
     
-    // For hackathon demo - return a realistic swap order structure
-    // In production, this would query the database/blockchain state
+    // Get the actual stored swap data
+    const storedSwap = swapStorage.getSwap(orderId);
+    if (!storedSwap) {
+      return NextResponse.json(
+        { error: `Swap ${orderId} not found` },
+        { status: 404 }
+      );
+    }
+    
+    // Get contract addresses for the chains
+    const deploymentStatus = chainResolver.getDeploymentStatus();
+    const srcContract = deploymentStatus[storedSwap.srcChain]?.contract;
+    const dstContract = deploymentStatus[storedSwap.dstChain]?.contract;
     
     const swapOrder = {
-      orderId,
-      status: 'created', // created, src_deployed, dst_deployed, completed, failed, cancelled
-      srcChain: 'base',
-      dstChain: 'stellar',
-      makingAmount: '1000000000000000000', // 1 ETH
-      takingAmount: '10000000', // 1 XLM (7 decimals)
-      makerAsset: '0x0000000000000000000000000000000000000000', // ETH
-      takerAsset: 'native', // XLM
-      maker: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
-      secretHash: '0x' + 'a'.repeat(64), // Would be real secret hash
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      orderId: storedSwap.orderId,
+      status: storedSwap.status,
+      srcChain: storedSwap.srcChain,
+      dstChain: storedSwap.dstChain,
+      makingAmount: storedSwap.srcAmount,
+      takingAmount: storedSwap.dstAmount,
+      makerAsset: storedSwap.srcToken,
+      takerAsset: storedSwap.dstToken,
+      maker: storedSwap.maker,
+      secretHash: storedSwap.secretHash,
+      createdAt: storedSwap.createdAt,
+      updatedAt: storedSwap.createdAt, // For now, same as created
       // Include contract information
       contracts: {
-        srcContract: '0xE53136D9De56672e8D2665C98653AC7b8A60Dc44', // Base LOP
-        dstContract: 'CAPWY2XT62L3A3VBPVS4IOHDQJDULCLR2QNZ5724PBOROLVKQXYH6ZZ7' // Stellar HTLC
+        srcContract: srcContract || 'pending',
+        dstContract: dstContract || 'pending'
       },
       timelock: {
         srcCancellation: (Math.floor(Date.now() / 1000) + 3600).toString(),
