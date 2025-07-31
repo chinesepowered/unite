@@ -387,13 +387,40 @@ export class SuiAdapter {
       if (privateKeyEnv.startsWith('suiprivkey1')) {
         // Handle Sui bech32-encoded private key from `sui keytool export`
         console.log(`🔑 Using Sui bech32 private key format`);
-        // For now, use fallback: convert to simple transfer
-        // In production, you'd properly decode the bech32 key
-        console.log(`⚠️ Bech32 key detected but using fallback approach for demo`);
-        // Create a dummy keypair for demo - in production decode the actual key
-        const dummyKey = new Uint8Array(32);
-        dummyKey.fill(1); // Fill with dummy data
-        keypair = Ed25519Keypair.fromSecretKey(dummyKey);
+        
+        // Proper bech32 decoding for Sui private keys
+        // Sui uses bech32 with 'suiprivkey1' prefix
+        const bech32Words = privateKeyEnv.slice(11); // Remove 'suiprivkey1' prefix
+        
+        // Simple bech32 decode implementation for Sui keys
+        const CHARSET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
+        const data = [];
+        for (let i = 0; i < bech32Words.length; i++) {
+          const char = bech32Words[i];
+          const value = CHARSET.indexOf(char);
+          if (value === -1) continue;
+          data.push(value);
+        }
+        
+        // Convert 5-bit groups to 8-bit bytes
+        const bytes = [];
+        let accumulator = 0;
+        let bits = 0;
+        
+        for (const value of data.slice(0, -6)) { // Skip checksum
+          accumulator = (accumulator << 5) | value;
+          bits += 5;
+          if (bits >= 8) {
+            bytes.push((accumulator >>> (bits - 8)) & 255);
+            bits -= 8;
+          }
+        }
+        
+        // Skip the flag byte (first byte) and take next 32 bytes for Ed25519
+        const privateKeyBytes = new Uint8Array(bytes.slice(1, 33));
+        console.log(`🔑 Decoded ${privateKeyBytes.length} bytes from bech32 key`);
+        
+        keypair = Ed25519Keypair.fromSecretKey(privateKeyBytes);
       } else {
         // Handle hex format
         let cleanKey = privateKeyEnv;
@@ -510,9 +537,32 @@ export class SuiAdapter {
       
       if (privateKeyEnv.startsWith('suiprivkey1')) {
         // Handle Sui bech32-encoded private key from `sui keytool export`
-        const dummyKey = new Uint8Array(32);
-        dummyKey.fill(1);
-        keypair = Ed25519Keypair.fromSecretKey(dummyKey);
+        const bech32Words = privateKeyEnv.slice(11); // Remove 'suiprivkey1' prefix
+        
+        const CHARSET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
+        const data = [];
+        for (let i = 0; i < bech32Words.length; i++) {
+          const char = bech32Words[i];
+          const value = CHARSET.indexOf(char);
+          if (value === -1) continue;
+          data.push(value);
+        }
+        
+        const bytes = [];
+        let accumulator = 0;
+        let bits = 0;
+        
+        for (const value of data.slice(0, -6)) { // Skip checksum
+          accumulator = (accumulator << 5) | value;
+          bits += 5;
+          if (bits >= 8) {
+            bytes.push((accumulator >>> (bits - 8)) & 255);
+            bits -= 8;
+          }
+        }
+        
+        const privateKeyBytes = new Uint8Array(bytes.slice(1, 33));
+        keypair = Ed25519Keypair.fromSecretKey(privateKeyBytes);
       } else {
         // Handle hex format
         let cleanKey = privateKeyEnv;
