@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CheckCircle, Clock, XCircle, AlertCircle, ExternalLink, Loader2 } from 'lucide-react';
-import { SwapOrder } from '../types';
+import { CheckCircle, Clock, XCircle, AlertCircle, ExternalLink, Loader2, ArrowRight, Users } from 'lucide-react';
+import { SwapOrder, TransactionResult } from '../types';
 import { getChainById } from '../lib/chains';
 import apiClient from '../lib/api';
 import clsx from 'clsx';
@@ -62,6 +62,7 @@ export default function SwapStatus({ orderId, onClose }: SwapStatusProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [executing, setExecuting] = useState(false);
+  const [executionResult, setExecutionResult] = useState<any>(null);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -96,10 +97,18 @@ export default function SwapStatus({ orderId, onClose }: SwapStatusProps) {
     setExecuting(true);
     try {
       const result = await apiClient.executeSwap(orderId);
+      setExecutionResult(result);
+      
       if (result.success) {
-        // Refresh swap status
-        const updatedSwap = await apiClient.getSwap(orderId);
-        setSwap(updatedSwap);
+        // Store transaction results in swap object for display
+        setSwap(prev => prev ? {
+          ...prev,
+          transactions: result.results,
+          atomicSwapSteps: result.atomicSwapSteps,
+          secret: result.secret,
+          executionMessage: result.message,
+          status: result.atomicSwapSteps?.claimsCompleted >= 2 ? 'completed' : 'dst_deployed'
+        } : null);
       } else {
         setError(result.error || 'Failed to execute swap');
       }
@@ -264,6 +273,98 @@ export default function SwapStatus({ orderId, onClose }: SwapStatusProps) {
           <span className="text-gray-900">{new Date(swap.createdAt).toLocaleString()}</span>
         </div>
       </div>
+
+      {/* Transaction Breakdown */}
+      {swap.transactions && swap.transactions.length > 0 && (
+        <div className="mb-6">
+          <div className="flex items-center space-x-2 mb-4">
+            <Users className="w-5 h-5 text-blue-500" />
+            <h3 className="text-lg font-semibold text-gray-900">Transaction Breakdown</h3>
+          </div>
+          
+          {swap.executionMessage && (
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-green-800 font-medium">{swap.executionMessage}</p>
+              {swap.atomicSwapSteps && (
+                <p className="text-green-700 text-sm mt-1">
+                  {swap.atomicSwapSteps.escrowsCreated} escrows created, {swap.atomicSwapSteps.claimsCompleted} claims completed
+                </p>
+              )}
+            </div>
+          )}
+          
+          <div className="space-y-3">
+            {swap.transactions.map((tx, index) => {
+              const getAccountLabel = (txType: string) => {
+                if (txType.includes('alice')) return { label: 'Account 1 (Alice)', color: 'bg-blue-100 text-blue-800' };
+                if (txType.includes('bob')) return { label: 'Account 2 (Bob)', color: 'bg-purple-100 text-purple-800' };
+                if (txType.includes('demo')) return { label: 'Demo Account', color: 'bg-gray-100 text-gray-800' };
+                return { label: 'Account', color: 'bg-gray-100 text-gray-800' };
+              };
+              
+              const getStepLabel = (txType: string) => {
+                if (txType.includes('escrow')) return txType.includes('alice') ? 'Creates Escrow' : 'Creates Counter-Escrow';
+                if (txType.includes('claim')) return 'Claims Funds';
+                return 'Transaction';
+              };
+              
+              const account = getAccountLabel(tx.type);
+              const stepLabel = getStepLabel(tx.type);
+              const chain = getChainById(tx.chain);
+              
+              return (
+                <div key={index} className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center space-x-3">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${account.color}`}>
+                        {account.label}
+                      </span>
+                      <ArrowRight className="w-4 h-4 text-gray-400" />
+                      <span className="font-medium text-gray-900">{stepLabel}</span>
+                      {chain && (
+                        <div className="flex items-center space-x-1">
+                          <span className="text-sm">on</span>
+                          <div 
+                            className="w-4 h-4 rounded-full flex items-center justify-center text-xs"
+                            style={{ backgroundColor: chain.color }}
+                          >
+                            {chain.icon}
+                          </div>
+                          <span className="text-sm font-medium">{chain.name}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="font-mono text-sm text-gray-600">
+                      {tx.txHash.slice(0, 10)}...{tx.txHash.slice(-8)}
+                    </div>
+                    <a
+                      href={tx.explorerUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center space-x-1 text-blue-600 hover:text-blue-800 text-sm"
+                    >
+                      <span>View on Explorer</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          
+          {swap.secret && (
+            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="text-yellow-800 text-sm">
+                <span className="font-medium">Secret Revealed:</span>
+                <span className="font-mono ml-2">{swap.secret.slice(0, 16)}...</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Action Buttons */}
       <div className="flex space-x-3">

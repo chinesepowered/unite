@@ -38,6 +38,22 @@ export const apiClient = {
   // Execute a swap
   executeSwap: async (orderId: string): Promise<{
     success: boolean;
+    orderId: string;
+    message: string;
+    results: Array<{
+      chain: string;
+      type: string;
+      txHash: string;
+      explorerUrl: string;
+    }>;
+    errors?: string[];
+    secret?: string;
+    atomicSwapSteps: {
+      escrowsCreated: number;
+      claimsCompleted: number;
+      totalTransactions: number;
+    };
+    nextSteps: string;
     srcEscrow?: string;
     dstEscrow?: string;
     txHash?: string;

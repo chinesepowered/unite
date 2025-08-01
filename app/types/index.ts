@@ -14,6 +14,19 @@ export interface Token {
   icon?: string;
 }
 
+export interface TransactionResult {
+  chain: string;
+  type: string;
+  txHash: string;
+  explorerUrl: string;
+}
+
+export interface AtomicSwapSteps {
+  escrowsCreated: number;
+  claimsCompleted: number;
+  totalTransactions: number;
+}
+
 export interface SwapOrder {
   orderId: string;
   status: string;
@@ -29,6 +42,14 @@ export interface SwapOrder {
   createdAt: string;
   updatedAt: string;
   secretHash?: string;
+  makerAsset?: string;
+  takerAsset?: string;
+  makingAmount?: string;
+  takingAmount?: string;
+  transactions?: TransactionResult[];
+  atomicSwapSteps?: AtomicSwapSteps;
+  secret?: string;
+  executionMessage?: string;
 }
 
 export interface SwapFormData {
