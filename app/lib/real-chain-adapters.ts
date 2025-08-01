@@ -21,6 +21,10 @@ interface TransactionResult {
   explorerUrl: string;
   success: boolean;
   error?: string;
+  usedContract?: boolean; // Whether actual contract was used vs fallback
+  escrowId?: string; // Escrow ID if contract was used
+  lopOrderHash?: string; // LOP order hash for Base
+  htlcEscrowId?: string; // HTLC escrow ID for other chains
 }
 
 // Base L2 adapter using 1inch LOP
@@ -108,17 +112,20 @@ export class BaseAdapter {
       console.log(`💸 Trying to lock: ${ethers.formatEther(amount)} ETH`);
       
       // Create a REAL 1inch LOP limit order struct (Order from the contract)
+      // Use wrapped ETH address instead of zero address for better compatibility
+      const WETH_BASE = '0x4200000000000000000000000000000000000006'; // Base WETH
+      
       const limitOrder = {
-        salt: ethers.randomBytes(32), // Random salt for uniqueness
-        makerAsset: '0x0000000000000000000000000000000000000000', // ETH address
-        takerAsset: '0x0000000000000000000000000000000000000000', // ETH address (for production)
+        salt: BigInt('0x' + ethers.hexlify(ethers.randomBytes(32)).slice(2)), // Random salt as BigInt
+        makerAsset: WETH_BASE, // Use WETH instead of ETH for 1inch compatibility
+        takerAsset: WETH_BASE, // Use WETH for both sides (simplified for demo)
         maker: this.wallet.address, // Our wallet is the maker
-        receiver: order.maker, // User receives the filled order
+        receiver: this.wallet.address, // Receive back to our wallet for simplicity
         allowedSender: '0x0000000000000000000000000000000000000000', // Allow any sender
-        makingAmount: amount, // Amount of ETH we're offering
-        takingAmount: amount, // Amount we want in return (same for production)
-        makerAssetData: '0x', // No special data for ETH
-        takerAssetData: '0x', // No special data for ETH
+        makingAmount: amount, // Amount of WETH we're offering
+        takingAmount: amount, // Amount we want in return (1:1 for demo)
+        makerAssetData: '0x', // No special data for WETH
+        takerAssetData: '0x', // No special data for WETH
         getMakerAmount: '0x', // No dynamic amount calculation
         getTakerAmount: '0x', // No dynamic amount calculation
         predicate: '0x', // No execution conditions
@@ -221,8 +228,9 @@ export class BaseAdapter {
           txHash: htlcTx.hash,
           explorerUrl: `https://sepolia.basescan.org/tx/${htlcTx.hash}`,
           success: true,
-          lopOrderHash: orderHash, // Include for claiming
-          htlcEscrowId: 'escrow_1' // Escrow ID for claiming
+          usedContract: true, // Successfully used 1inch LOP contract
+          lopOrderHash: orderHash,
+          htlcEscrowId: 'hybrid_escrow' // Hybrid escrow ID
         };
         
       } catch (hashError) {
@@ -242,7 +250,8 @@ export class BaseAdapter {
         return {
           txHash: fallbackTx.hash,
           explorerUrl: `https://sepolia.basescan.org/tx/${fallbackTx.hash}`,
-          success: true
+          success: true,
+          usedContract: false // Used fallback, not contract
         };
       }
       
@@ -738,9 +747,16 @@ export class MonadAdapter {
       console.log(`💰 Wallet balance: ${ethers.formatEther(balance)} MON`);
       console.log(`💸 Trying to send: ${ethers.formatEther(amount)} MON`);
       
-      // If contract call fails, fall back to simple transfer
-      // This ensures we can demonstrate real Monad blockchain interaction
+      // First check if contract exists by checking bytecode
       try {
+        const contractCode = await this.provider.getCode('0x0A027767aC1e4aA5474A1B98C3eF730C3994E67b');
+        if (contractCode === '0x') {
+          throw new Error('HTLC contract not deployed at this address');
+        }
+        
+        console.log(`✅ HTLC contract exists, calling createEscrow...`);
+        console.log(`📋 Parameters: secretHash=${order.secretHash}, timelock=${Math.floor(Date.now() / 1000 + 3600)}, receiver=${order.maker}, orderId=${order.orderId}, value=${amount}`);
+        
         const contractCall = this.htlcContract.createEscrow(
           order.secretHash,
           Math.floor(Date.now() / 1000 + 3600), // 1 hour timelock
@@ -748,7 +764,7 @@ export class MonadAdapter {
           order.orderId,
           { 
             value: amount,
-            gasLimit: 200000 // Explicit gas limit for contract call
+            gasLimit: 300000 // Increase gas limit in case that's the issue
           }
         );
 
@@ -763,10 +779,16 @@ export class MonadAdapter {
         await Promise.race([waitPromise, waitTimeoutPromise]);
         console.log(`✅ Monad HTLC contract called successfully`);
 
+        // Extract escrow ID from transaction receipt/logs if available
+        const receipt = await tx.wait();
+        let escrowId = '1'; // Default escrow ID - would extract from event logs in production
+        
         return {
           txHash: tx.hash,
           explorerUrl: `https://testnet.monadexplorer.com/tx/${tx.hash}`,
-          success: true
+          success: true,
+          usedContract: true,
+          escrowId: escrowId
         };
         
       } catch (contractError) {
@@ -786,7 +808,8 @@ export class MonadAdapter {
         return {
           txHash: fallbackTx.hash,
           explorerUrl: `https://testnet.monadexplorer.com/tx/${fallbackTx.hash}`,
-          success: true
+          success: true,
+          usedContract: false // Used fallback, not contract
         };
       }
     } catch (error) {

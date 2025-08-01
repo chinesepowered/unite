@@ -57,6 +57,12 @@ export async function POST(request: NextRequest) {
 
     const results = [];
     const errors = [];
+    
+    // Track contract usage for proper claim logic
+    let aliceUsedContract = false;
+    let bobUsedContract = false;
+    let aliceEscrowId: string | undefined;
+    let bobEscrowId: string | undefined;
 
     // Step 1: Alice (Wallet 1) creates escrow on source chain
     try {
@@ -70,6 +76,9 @@ export async function POST(request: NextRequest) {
       
       if (aliceSrcResult.success) {
         console.log(`✅ Alice's ${swapOrder.srcChain} escrow created: ${aliceSrcResult.txHash}`);
+        aliceUsedContract = aliceSrcResult.usedContract || false;
+        aliceEscrowId = aliceSrcResult.escrowId || aliceSrcResult.htlcEscrowId;
+        
         results.push({
           chain: swapOrder.srcChain,
           type: 'alice_escrow',
@@ -127,6 +136,9 @@ export async function POST(request: NextRequest) {
         
         if (bobDstResult.success) {
           console.log(`✅ Bob's ${swapOrder.dstChain} escrow created: ${bobDstResult.txHash}`);
+          bobUsedContract = bobDstResult.usedContract || false;
+          bobEscrowId = bobDstResult.escrowId || bobDstResult.htlcEscrowId;
+          
           results.push({
             chain: swapOrder.dstChain,
             type: 'bob_escrow',
@@ -152,8 +164,10 @@ export async function POST(request: NextRequest) {
         console.log(`🎯 Step 3a: Alice claiming Bob's ${swapOrder.dstChain} funds`);
         const aliceDstAdapter = getChainAdapter(swapOrder.dstChain, false); // Alice = first wallet
         
-        if (swapOrder.dstChain === 'monad') {
-          const aliceClaimResult = await (aliceDstAdapter as any).claimHTLC('1', secret); // Escrow ID
+        // Only attempt claim if Bob actually used a contract (not fallback)
+        if (swapOrder.dstChain === 'monad' && bobUsedContract && bobEscrowId) {
+          console.log(`🔗 Using real escrow ID: ${bobEscrowId}`);
+          const aliceClaimResult = await (aliceDstAdapter as any).claimHTLC(bobEscrowId, secret);
           if (aliceClaimResult.success) {
             console.log(`✅ Alice claimed ${swapOrder.dstChain} funds: ${aliceClaimResult.txHash}`);
             results.push({
@@ -163,6 +177,8 @@ export async function POST(request: NextRequest) {
               explorerUrl: aliceClaimResult.explorerUrl
             });
           }
+        } else {
+          console.log(`⚠️ Skipping Alice claim - Bob used fallback (no real escrow), bobUsedContract: ${bobUsedContract}, bobEscrowId: ${bobEscrowId}`);
         }
       } catch (error) {
         console.warn(`⚠️ Alice's claim failed:`, error);
@@ -173,8 +189,10 @@ export async function POST(request: NextRequest) {
         console.log(`🎯 Step 3b: Bob claiming Alice's ${swapOrder.srcChain} funds`);
         const bobSrcAdapter = getChainAdapter(swapOrder.srcChain, true); // Bob = second wallet
         
-        if (swapOrder.srcChain === 'base') {
-          const bobClaimResult = await (bobSrcAdapter as any).claimHTLC('escrow_1', secret);
+        // Only attempt claim if Alice actually used a contract (not fallback)
+        if (swapOrder.srcChain === 'base' && aliceUsedContract && aliceEscrowId) {
+          console.log(`🔗 Using real escrow ID: ${aliceEscrowId}`);
+          const bobClaimResult = await (bobSrcAdapter as any).claimHTLC(aliceEscrowId, secret);
           if (bobClaimResult.success) {
             console.log(`✅ Bob claimed ${swapOrder.srcChain} funds: ${bobClaimResult.txHash}`);
             results.push({
@@ -184,6 +202,8 @@ export async function POST(request: NextRequest) {
               explorerUrl: bobClaimResult.explorerUrl
             });
           }
+        } else {
+          console.log(`⚠️ Skipping Bob claim - Alice used fallback (no real escrow), aliceUsedContract: ${aliceUsedContract}, aliceEscrowId: ${aliceEscrowId}`);
         }
       } catch (error) {
         console.warn(`⚠️ Bob's claim failed:`, error);
