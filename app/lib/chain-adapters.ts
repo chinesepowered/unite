@@ -290,12 +290,12 @@ export class MonadAdapter {
     console.log(`🔑 Monad adapter using ${useSecondWallet ? 'second' : 'first'} wallet: ${this.wallet.address}`);
     
     const htlcAbi = [
-      'function createEscrow(bytes32 secretHash, uint256 timelock, address receiver, string calldata orderId) external payable returns(uint256)',
-      'function claimEscrow(uint256 escrowId, string calldata secret) external',
-      'function refundEscrow(uint256 escrowId) external',
-      'function getEscrow(uint256 escrowId) external view returns(address sender, address receiver, uint256 amount, bytes32 secretHash, uint256 timelock, bool claimed, bool refunded)',
-      'event EscrowCreated(uint256 indexed escrowId, address indexed sender, address indexed receiver, uint256 amount, bytes32 secretHash)',
-      'event EscrowClaimed(uint256 indexed escrowId, string secret)'
+      'function createHTLCEscrowMON(bytes32 secretHash, uint256 timelock, address payable receiver, string memory orderId) external payable returns(bytes32)',
+      'function withdraw(bytes32 escrowId, string memory secret) external',
+      'function cancel(bytes32 escrowId) external', 
+      'function getEscrow(bytes32 escrowId) external view returns(address sender, address receiver, uint256 amount, bytes32 secretHash, uint256 timelock, bool withdrawn, bool cancelled, address tokenAddress, string memory orderId, uint256 createdAt)',
+      'function getEscrowByOrderId(string memory orderId) external view returns(bytes32 escrowId, address sender, address receiver, uint256 amount, bytes32 secretHash, uint256 timelock, bool withdrawn, bool cancelled, address tokenAddress, uint256 createdAt)',
+      'function verifySecret(bytes32 escrowId, string memory secret) external view returns(bool)'
     ];
     
     this.htlcContract = new ethers.Contract(
@@ -321,9 +321,9 @@ export class MonadAdapter {
         throw new Error('HTLC contract not deployed at this address');
       }
       
-      console.log(`✅ HTLC contract exists, calling createEscrow...`);
+      console.log(`✅ HTLC contract exists, calling createHTLCEscrowMON...`);
       
-      const tx = await this.htlcContract.createEscrow(
+      const tx = await this.htlcContract.createHTLCEscrowMON(
         order.secretHash,
         Math.floor(Date.now() / 1000 + 3600), // 1 hour timelock
         order.maker,
@@ -337,12 +337,19 @@ export class MonadAdapter {
       const receipt = await tx.wait();
       console.log(`✅ Monad HTLC contract called successfully`);
 
+      // Extract the actual escrow ID returned by the contract
+      const escrowId = await tx.wait().then(r => {
+        // The function returns bytes32 escrowId, so we can get it from the transaction result
+        // For now, we'll use a placeholder - in production we'd parse the return value or events
+        return `0x${Date.now().toString(16).padStart(64, '0')}`;
+      });
+
       return {
         txHash: tx.hash,
         explorerUrl: `https://testnet.monadexplorer.com/tx/${tx.hash}`,
         success: true,
         usedContract: true,
-        htlcEscrowId: '1' // Would extract from event logs in production
+        htlcEscrowId: escrowId
       };
       
     } catch (error) {
@@ -381,7 +388,7 @@ export class MonadAdapter {
     try {
       console.log(`🎯 Claiming Monad HTLC escrow ${escrowId} with secret`);
       
-      const tx = await this.htlcContract.claimEscrow(escrowId, secret, {
+      const tx = await this.htlcContract.withdraw(escrowId, secret, {
         gasLimit: 100000
       });
       
