@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getChainAdapter } from '../../lib/real-chain-adapters';
+import { getChainAdapter } from '../../lib/fixed-chain-adapters';
 import { randomBytes, createHash } from 'crypto';
 
 // Access global storage set by swap creation (avoiding hanging imports)
