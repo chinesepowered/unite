@@ -9,7 +9,7 @@ interface RouteParams {
 export async function GET(request: NextRequest, { params }: RouteParams) {
   const { orderId } = params;
   
-  // Return hardcoded but realistic swap data for demo
+  // Return hardcoded but realistic swap data for testing
   return NextResponse.json({
     orderId,
     status: 'created',

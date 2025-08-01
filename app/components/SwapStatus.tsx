@@ -298,7 +298,7 @@ export default function SwapStatus({ orderId, onClose }: SwapStatusProps) {
               const getAccountLabel = (txType: string) => {
                 if (txType.includes('alice')) return { label: 'Account 1 (Alice)', color: 'bg-blue-100 text-blue-800' };
                 if (txType.includes('bob')) return { label: 'Account 2 (Bob)', color: 'bg-purple-100 text-purple-800' };
-                if (txType.includes('demo')) return { label: 'Demo Account', color: 'bg-gray-100 text-gray-800' };
+                if (txType.includes('single_wallet')) return { label: 'Account 1 (Single Mode)', color: 'bg-amber-100 text-amber-800' };
                 return { label: 'Account', color: 'bg-gray-100 text-gray-800' };
               };
               

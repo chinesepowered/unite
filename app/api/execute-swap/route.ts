@@ -91,22 +91,22 @@ export async function POST(request: NextRequest) {
                              swapOrder.dstChain === 'sui' ? 'SUI_PRIVATE_KEY_2' : 'STELLAR_PRIVATE_KEY_2';
       
       if (!process.env[secondWalletKey]) {
-        console.warn(`⚠️ ${secondWalletKey} not found, using Alice's wallet for demo`);
-        // Use Alice's wallet for demo (shows hybrid concept without second wallet)
+        console.warn(`⚠️ ${secondWalletKey} not found, using single-wallet mode`);
+        // Use Alice's wallet for single-wallet fallback
         const bobDstAdapter = getChainAdapter(swapOrder.dstChain, false); // Use first wallet
         const bobDstResult = await bobDstAdapter.createHTLC(swapOrder);
         
         if (bobDstResult.success) {
-          console.log(`✅ Demo: ${swapOrder.dstChain} escrow created: ${bobDstResult.txHash}`);
+          console.log(`✅ Single-wallet: ${swapOrder.dstChain} escrow created: ${bobDstResult.txHash}`);
           results.push({
             chain: swapOrder.dstChain,
-            type: 'demo_escrow',
+            type: 'single_wallet_escrow',
             txHash: bobDstResult.txHash,
             explorerUrl: bobDstResult.explorerUrl
           });
         } else {
-          console.error(`❌ Demo ${swapOrder.dstChain} escrow failed: ${bobDstResult.error}`);
-          errors.push(`${swapOrder.dstChain} (Demo): ${bobDstResult.error}`);
+          console.error(`❌ Single-wallet ${swapOrder.dstChain} escrow failed: ${bobDstResult.error}`);
+          errors.push(`${swapOrder.dstChain} (Single-wallet): ${bobDstResult.error}`);
         }
       } else {
         // Use proper second wallet
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
         const aliceDstAdapter = getChainAdapter(swapOrder.dstChain, false); // Alice = first wallet
         
         if (swapOrder.dstChain === 'monad') {
-          const aliceClaimResult = await (aliceDstAdapter as any).claimHTLC('1', secret); // Demo escrow ID
+          const aliceClaimResult = await (aliceDstAdapter as any).claimHTLC('1', secret); // Escrow ID
           if (aliceClaimResult.success) {
             console.log(`✅ Alice claimed ${swapOrder.dstChain} funds: ${aliceClaimResult.txHash}`);
             results.push({
@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
         const bobSrcAdapter = getChainAdapter(swapOrder.srcChain, true); // Bob = second wallet
         
         if (swapOrder.srcChain === 'base') {
-          const bobClaimResult = await (bobSrcAdapter as any).claimHTLC('demo_escrow_1', secret);
+          const bobClaimResult = await (bobSrcAdapter as any).claimHTLC('escrow_1', secret);
           if (bobClaimResult.success) {
             console.log(`✅ Bob claimed ${swapOrder.srcChain} funds: ${bobClaimResult.txHash}`);
             results.push({

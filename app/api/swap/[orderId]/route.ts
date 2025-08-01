@@ -6,13 +6,13 @@ interface RouteParams {
   };
 }
 
-// Simple in-memory mock for demo - simulates swap progression
+// Simple in-memory mock - simulates swap progression
 const swapProgressMock = new Map<string, { status: string; startTime: number; srcChain: string; dstChain: string; }>();
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { orderId } = params;
-    console.log(`🔍 GET /api/swap/${orderId} - Mock demo response`);
+    console.log(`🔍 GET /api/swap/${orderId} - Mock response`);
     
     // Initialize if first time
     if (!swapProgressMock.has(orderId)) {
@@ -57,12 +57,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         srcCancellation: (Math.floor(Date.now() / 1000) + 3600).toString(),
         dstCancellation: (Math.floor(Date.now() / 1000) + 1800).toString()
       },
-      // Add demo transaction hashes when "deployed"
+      // Add transaction hashes when "deployed"
       transactions: swap.status !== 'created' ? {
         srcTx: swap.status === 'src_deployed' || swap.status === 'dst_deployed' || swap.status === 'completed' 
-          ? 'https://sepolia.basescan.org/tx/0xdemo...base' : null,
+          ? 'https://sepolia.basescan.org/tx/0xtest...base' : null,
         dstTx: swap.status === 'dst_deployed' || swap.status === 'completed'
-          ? 'https://testnet.monadexplorer.com/tx/0xdemo...monad' : null
+          ? 'https://testnet.monadexplorer.com/tx/0xtest...monad' : null
       } : null
     });
   } catch (error) {

@@ -43,24 +43,6 @@ export default function HomePage() {
     setError(null);
   };
 
-  const handleQuickDemo = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const result = await apiClient.createDemoSwap({
-        srcChain: 'base',
-        dstChain: 'stellar'
-      });
-      setSelectedOrderId(result.orderId);
-      setCurrentView('status');
-      setHistoryRefresh(prev => prev + 1);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create demo swap');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -85,14 +67,6 @@ export default function HomePage() {
                 <Github className="w-4 h-4" />
                 <span className="hidden sm:inline">Source</span>
               </a>
-              <button
-                onClick={handleQuickDemo}
-                disabled={loading}
-                className="flex items-center space-x-2 px-4 py-2 bg-yellow-500 text-yellow-900 rounded-lg hover:bg-yellow-400 transition-colors disabled:opacity-50"
-              >
-                <Zap className="w-4 h-4" />
-                <span>Quick Demo</span>
-              </button>
             </div>
           </div>
         </div>
@@ -223,7 +197,6 @@ export default function HomePage() {
                 <div>POST /api/swap</div>
                 <div>GET /api/swap/:id</div>
                 <div>POST /api/swap/:id/execute</div>
-                <div>POST /api/demo/swap</div>
               </div>
               <a
                 href="/api/chains"

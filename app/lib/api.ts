@@ -85,59 +85,6 @@ export const apiClient = {
     return response.data;
   },
 
-  // Create demo swap
-  createDemoSwap: async (params?: {
-    srcChain?: string;
-    dstChain?: string;
-    srcToken?: string;
-    dstToken?: string;
-    srcAmount?: string;
-    dstAmount?: string;
-    maker?: string;
-  }): Promise<{
-    message: string;
-    orderId: string;
-    status: string;
-    srcChain: string;
-    dstChain: string;
-    secretHash: string;
-  }> => {
-    const response = await api.post('/demo/swap', params || {});
-    return response.data;
-  },
-
-  // Convenience methods for bidirectional swaps
-  createEthToChainSwap: async (params: {
-    dstChain: string;
-    srcToken: string;
-    dstToken: string;
-    srcAmount: string;
-    dstAmount: string;
-    maker: string;
-  }): Promise<{
-    orderId: string;
-    status: string;
-    secretHash: string;
-  }> => {
-    const response = await api.post('/swap/eth-to-chain', params);
-    return response.data;
-  },
-
-  createChainToEthSwap: async (params: {
-    srcChain: string;
-    srcToken: string;
-    dstToken: string;
-    srcAmount: string;
-    dstAmount: string;
-    maker: string;
-  }): Promise<{
-    orderId: string;
-    status: string;
-    secretHash: string;
-  }> => {
-    const response = await api.post('/swap/chain-to-eth', params);
-    return response.data;
-  },
 };
 
 export default apiClient;
