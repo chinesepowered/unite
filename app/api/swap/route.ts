@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { randomBytes, createHash } from 'crypto';
+import { randomBytes } from 'crypto';
+import { ethers } from 'ethers';
 import { chainResolver } from '../../lib/chain-resolver';
 import { swapStorage } from '../../lib/swap-storage';
 
@@ -19,7 +20,8 @@ export async function POST(request: NextRequest) {
     // Generate real HTLC parameters
     const orderId = '0x' + randomBytes(16).toString('hex');
     const secret = randomBytes(32).toString('hex');
-    const secretHash = '0x' + createHash('sha256').update(secret, 'hex').digest('hex');
+    // Hash the secret using keccak256 to match Solidity's keccak256(abi.encodePacked(secret))
+    const secretHash = ethers.keccak256(ethers.toUtf8Bytes(secret));
     
     const currentTime = Math.floor(Date.now() / 1000);
     
@@ -69,6 +71,7 @@ export async function POST(request: NextRequest) {
       takerAsset: swapOrder.takerAsset,
       maker: swapOrder.maker,
       secretHash: swapOrder.secretHash,
+      secret: secret,  // Store the actual secret for execution
       createdAt: swapOrder.createdAt,
       updatedAt: swapOrder.createdAt,
       contracts: {

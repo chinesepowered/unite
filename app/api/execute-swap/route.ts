@@ -35,9 +35,20 @@ export async function POST(request: NextRequest) {
 
     console.log(`📋 Found stored swap: ${storedSwap.srcChain} → ${storedSwap.dstChain}`);
     
-    // Generate secret for HTLC (in production, this would be managed securely)
-    const secret = randomBytes(32).toString('hex');
-    const secretHash = '0x' + createHash('sha256').update(secret, 'hex').digest('hex');
+    // Use the stored secret from swap creation (don't generate a new one!)
+    const secret = storedSwap.secret;
+    if (!secret) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: `Secret not found for swap ${orderId}`,
+          hint: 'Swap may have been created with old version'
+        },
+        { status: 400 }
+      );
+    }
+    
+    console.log(`🔑 Using stored secret: ${secret.slice(0, 8)}...`);
     
     // Create swap order structure for chain adapters
     const swapOrder = {

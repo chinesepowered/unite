@@ -3,6 +3,7 @@
 
 import { ethers } from 'ethers';
 import lopAbi from '../../base-sepolia/ABI.json';
+import monadHtlcAbi from '../../contracts/monad/ABI.json';
 
 interface SwapOrder {
   orderId: string;
@@ -289,18 +290,9 @@ export class MonadAdapter {
     this.wallet = new ethers.Wallet(privateKey, this.provider);
     console.log(`🔑 Monad adapter using ${useSecondWallet ? 'second' : 'first'} wallet: ${this.wallet.address}`);
     
-    const htlcAbi = [
-      'function createHTLCEscrowMON(bytes32 secretHash, uint256 timelock, address payable receiver, string memory orderId) external payable returns(bytes32)',
-      'function withdraw(bytes32 escrowId, string memory secret) external',
-      'function cancel(bytes32 escrowId) external', 
-      'function getEscrow(bytes32 escrowId) external view returns(address sender, address receiver, uint256 amount, bytes32 secretHash, uint256 timelock, bool withdrawn, bool cancelled, address tokenAddress, string memory orderId, uint256 createdAt)',
-      'function getEscrowByOrderId(string memory orderId) external view returns(bytes32 escrowId, address sender, address receiver, uint256 amount, bytes32 secretHash, uint256 timelock, bool withdrawn, bool cancelled, address tokenAddress, uint256 createdAt)',
-      'function verifySecret(bytes32 escrowId, string memory secret) external view returns(bool)'
-    ];
-    
     this.htlcContract = new ethers.Contract(
       '0x0A027767aC1e4aA5474A1B98C3eF730C3994E67b',
-      htlcAbi,
+      monadHtlcAbi,
       this.wallet
     );
   }
@@ -323,10 +315,22 @@ export class MonadAdapter {
       
       console.log(`✅ HTLC contract exists, calling createHTLCEscrowMON...`);
       
+      // In atomic swap: Bob (this wallet) creates escrow with Alice as receiver
+      // Alice will be able to claim Bob's escrow with the secret
+      // We need Alice's wallet address, which is the first wallet
+      const aliceWallet = new ethers.Wallet(
+        process.env['MONAD_PRIVATE_KEY'] || process.env['BASE_PRIVATE_KEY']!, 
+        this.provider
+      );
+      const aliceAddress = aliceWallet.address;
+      
+      console.log(`🎯 Bob (${this.wallet.address}) creating escrow for Alice (${aliceAddress})`);
+      
+      // Execute the actual transaction (don't use staticCall as block.timestamp changes)
       const tx = await this.htlcContract.createHTLCEscrowMON(
         order.secretHash,
         Math.floor(Date.now() / 1000 + 3600), // 1 hour timelock
-        order.maker,
+        aliceAddress, // Alice as receiver
         order.orderId,
         { 
           value: amount,
@@ -336,13 +340,30 @@ export class MonadAdapter {
       
       const receipt = await tx.wait();
       console.log(`✅ Monad HTLC contract called successfully`);
-
-      // Extract the actual escrow ID returned by the contract
-      const escrowId = await tx.wait().then(r => {
-        // The function returns bytes32 escrowId, so we can get it from the transaction result
-        // For now, we'll use a placeholder - in production we'd parse the return value or events
-        return `0x${Date.now().toString(16).padStart(64, '0')}`;
-      });
+      
+      // Extract the real escrow ID from the EscrowCreated event
+      let escrowId: string | undefined;
+      if (receipt && receipt.logs) {
+        for (const log of receipt.logs) {
+          try {
+            const parsedLog = this.htlcContract.interface.parseLog({
+              topics: [...log.topics],
+              data: log.data
+            });
+            if (parsedLog && parsedLog.name === 'EscrowCreated') {
+              escrowId = parsedLog.args[0]; // First argument is escrowId
+              console.log(`🔍 Real escrow ID from event: ${escrowId}`);
+              break;
+            }
+          } catch (e) {
+            // Not our contract's log, skip
+          }
+        }
+      }
+      
+      if (!escrowId) {
+        throw new Error('Could not extract escrow ID from transaction receipt');
+      }
 
       return {
         txHash: tx.hash,
@@ -388,8 +409,30 @@ export class MonadAdapter {
     try {
       console.log(`🎯 Claiming Monad HTLC escrow ${escrowId} with secret`);
       
+      // First, let's verify the escrow exists and check its details
+      try {
+        const escrowDetails = await this.htlcContract.getEscrow(escrowId);
+        console.log(`📋 Escrow details:`, {
+          sender: escrowDetails[0],
+          receiver: escrowDetails[1], 
+          amount: ethers.formatEther(escrowDetails[2]),
+          withdrawn: escrowDetails[5],
+          cancelled: escrowDetails[6]
+        });
+        console.log(`🔍 Current wallet: ${this.wallet.address}`);
+        console.log(`🔍 Expected receiver: ${escrowDetails[1]}`);
+        console.log(`🔍 Wallet matches receiver: ${this.wallet.address.toLowerCase() === escrowDetails[1].toLowerCase()}`);
+        
+        // Verify the secret is correct
+        const secretValid = await this.htlcContract.verifySecret(escrowId, secret);
+        console.log(`🔍 Secret valid: ${secretValid}`);
+        
+      } catch (detailError) {
+        console.log(`⚠️ Could not get escrow details:`, detailError);
+      }
+      
       const tx = await this.htlcContract.withdraw(escrowId, secret, {
-        gasLimit: 100000
+        gasLimit: 200000 // Increase gas limit
       });
       
       await tx.wait();
