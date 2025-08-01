@@ -95,8 +95,8 @@ export class BaseAdapter {
     try {
       console.log(`🎯 HYBRID: Creating 1inch LOP + HTLC escrow on Base Sepolia`);
       
-      // Use the actual amount from the swap order
-      const amount = ethers.parseEther(order.srcAmount);
+      // The amount is already in wei, so use it directly
+      const amount = BigInt(order.srcAmount);
       
       console.log(`💰 Base hybrid: ${order.srcAmount} ETH → ${order.dstAmount} ${order.dstChain}`);
       console.log(`🔗 Step 1: 1inch LOP integration (hackathon requirement)`);
@@ -348,7 +348,7 @@ export class StellarAdapter {
             StellarSdk.xdr.ScVal.scvU64(StellarSdk.xdr.Uint64.fromString(Math.floor(Date.now() / 1000 + 3600).toString())), // timelock
             StellarSdk.xdr.ScVal.scvAddress(StellarSdk.Address.fromString(order.maker)), // receiver
             StellarSdk.xdr.ScVal.scvString(order.orderId), // order_id
-            StellarSdk.xdr.ScVal.scvU64(StellarSdk.xdr.Uint64.fromString((parseFloat(order.dstAmount) * 10000000).toString())) // amount in stroops
+            StellarSdk.xdr.ScVal.scvU64(StellarSdk.xdr.Uint64.fromString(order.dstAmount)) // amount already in stroops
           )
         )
         .setTimeout(300)
@@ -380,7 +380,7 @@ export class StellarAdapter {
           .addOperation(StellarSdk.Operation.payment({
             destination: order.maker,
             asset: StellarSdk.Asset.native(),
-            amount: order.dstAmount,
+            amount: (parseInt(order.dstAmount) / 10000000).toString(), // Convert stroops back to XLM for Horizon API
           }))
           .addMemo(StellarSdk.Memo.text(`HTLC:${order.orderId.slice(0, 20)}`))
           .setTimeout(300)
@@ -527,8 +527,8 @@ export class SuiAdapter {
       // Create REAL Move contract call
       const txb = new TransactionBlock();
       
-      // Convert amount to MIST (1 SUI = 1_000_000_000 MIST)
-      const amountInMist = Math.floor(parseFloat(order.dstAmount) * 1_000_000_000);
+      // Amount is already in MIST (smallest SUI unit)
+      const amountInMist = parseInt(order.dstAmount);
       const [coin] = txb.splitCoins(txb.gas, [txb.pure(amountInMist)]);
       
       try {
@@ -725,7 +725,7 @@ export class MonadAdapter {
     try {
       console.log(`🎯 Creating REAL Monad HTLC using deployed contract`);
       
-      const amount = ethers.parseEther(order.dstAmount);
+      const amount = BigInt(order.dstAmount);
       console.log(`💰 Monad HTLC: ${order.dstAmount} MON for order ${order.orderId}`);
       
       // Add timeout to contract call

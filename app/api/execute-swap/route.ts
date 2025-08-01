@@ -62,7 +62,11 @@ export async function POST(request: NextRequest) {
     try {
       console.log(`🎯 Step 1: Alice creating escrow on ${swapOrder.srcChain}`);
       const aliceSrcAdapter = getChainAdapter(swapOrder.srcChain, false); // Alice = first wallet
-      const aliceSrcResult = await aliceSrcAdapter.createLimitOrder(swapOrder);
+      
+      // Use appropriate method based on chain type (Base uses 1inch LOP, others use HTLC)
+      const aliceSrcResult = swapOrder.srcChain === 'base' 
+        ? await aliceSrcAdapter.createLimitOrder(swapOrder)
+        : await (aliceSrcAdapter as any).createHTLC(swapOrder);
       
       if (aliceSrcResult.success) {
         console.log(`✅ Alice's ${swapOrder.srcChain} escrow created: ${aliceSrcResult.txHash}`);
@@ -94,7 +98,11 @@ export async function POST(request: NextRequest) {
         console.warn(`⚠️ ${secondWalletKey} not found, using single-wallet mode`);
         // Use Alice's wallet for single-wallet fallback
         const bobDstAdapter = getChainAdapter(swapOrder.dstChain, false); // Use first wallet
-        const bobDstResult = await bobDstAdapter.createHTLC(swapOrder);
+        
+        // Use appropriate method based on chain type (Base uses 1inch LOP, others use HTLC)
+        const bobDstResult = swapOrder.dstChain === 'base'
+          ? await bobDstAdapter.createLimitOrder(swapOrder)
+          : await (bobDstAdapter as any).createHTLC(swapOrder);
         
         if (bobDstResult.success) {
           console.log(`✅ Single-wallet: ${swapOrder.dstChain} escrow created: ${bobDstResult.txHash}`);
@@ -111,7 +119,11 @@ export async function POST(request: NextRequest) {
       } else {
         // Use proper second wallet
         const bobDstAdapter = getChainAdapter(swapOrder.dstChain, true); // Bob = second wallet
-        const bobDstResult = await bobDstAdapter.createHTLC(swapOrder);
+        
+        // Use appropriate method based on chain type (Base uses 1inch LOP, others use HTLC)
+        const bobDstResult = swapOrder.dstChain === 'base'
+          ? await bobDstAdapter.createLimitOrder(swapOrder)
+          : await (bobDstAdapter as any).createHTLC(swapOrder);
         
         if (bobDstResult.success) {
           console.log(`✅ Bob's ${swapOrder.dstChain} escrow created: ${bobDstResult.txHash}`);
