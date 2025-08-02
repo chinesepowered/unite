@@ -268,8 +268,10 @@ export class MonadAdapter {
   private provider: ethers.JsonRpcProvider;
   private wallet: ethers.Wallet;
   private htlcContract: ethers.Contract;
+  private useSecondWallet: boolean;
 
   constructor(useSecondWallet = false) {
+    this.useSecondWallet = useSecondWallet;
     const rpcUrl = 'https://testnet-rpc.monad.xyz';
     
     this.provider = new ethers.JsonRpcProvider(rpcUrl, {
@@ -315,22 +317,32 @@ export class MonadAdapter {
       
       console.log(`✅ HTLC contract exists, calling createHTLCEscrowMON...`);
       
-      // In atomic swap: Bob (this wallet) creates escrow with Alice as receiver
-      // Alice will be able to claim Bob's escrow with the secret
-      // We need Alice's wallet address, which is the first wallet
-      const aliceWallet = new ethers.Wallet(
-        process.env['MONAD_PRIVATE_KEY'] || process.env['BASE_PRIVATE_KEY']!, 
-        this.provider
-      );
-      const aliceAddress = aliceWallet.address;
+      // In atomic swap: determine receiver based on who is creating the escrow
+      // If useSecondWallet=false (Alice), receiver should be Bob (second wallet)
+      // If useSecondWallet=true (Bob), receiver should be Alice (first wallet)
+      let receiverPrivateKey: string;
+      if (this.useSecondWallet) {
+        // Bob creating -> Alice receives (first wallet)
+        receiverPrivateKey = process.env['MONAD_PRIVATE_KEY'] || process.env['BASE_PRIVATE_KEY']!;
+      } else {
+        // Alice creating -> Bob receives (second wallet)
+        receiverPrivateKey = process.env['MONAD_PRIVATE_KEY_2'] || process.env['BASE_PRIVATE_KEY_2']!;
+        if (!receiverPrivateKey) {
+          console.log(`⚠️ Second wallet key not found, using first wallet as receiver for demo`);
+          receiverPrivateKey = process.env['MONAD_PRIVATE_KEY'] || process.env['BASE_PRIVATE_KEY']!;
+        }
+      }
       
-      console.log(`🎯 Bob (${this.wallet.address}) creating escrow for Alice (${aliceAddress})`);
+      const receiverWallet = new ethers.Wallet(receiverPrivateKey, this.provider);
+      const receiverAddress = receiverWallet.address;
+      
+      console.log(`🎯 ${this.useSecondWallet ? 'Bob' : 'Alice'} (${this.wallet.address}) creating escrow for ${this.useSecondWallet ? 'Alice' : 'Bob'} (${receiverAddress})`);
       
       // Execute the actual transaction (don't use staticCall as block.timestamp changes)
       const tx = await this.htlcContract.createHTLCEscrowMON(
         order.secretHash,
         Math.floor(Date.now() / 1000 + 3600), // 1 hour timelock
-        aliceAddress, // Alice as receiver
+        receiverAddress, // Correct receiver based on swap direction
         order.orderId,
         { 
           value: amount,
