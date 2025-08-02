@@ -410,16 +410,38 @@ curl -X POST http://localhost:3000/api/demo/swap \
 
 The project includes both a **Web UI** and **API** for fully functional demos:
 
+### Live Demo Page
+
+```bash
+# Start the application
+pnpm dev
+
+# Open browser to http://localhost:3000/demo  
+# - 8 pre-configured swap pairs
+# - One-click execution with real blockchain transactions
+# - Live transaction results with explorer links
+# - Perfect for hackathon video demos
+```
+
+**Featured Demo Swaps:**
+1. 🔵⚡ Base Sepolia → Monad Testnet (0.001 ETH → 0.001 MON)
+2. ⚡🔵 Monad Testnet → Base Sepolia (0.001 MON → 0.001 ETH)  
+3. 🔵🌊 Base Sepolia → Sui Testnet (0.001 ETH → 0.001 SUI)
+4. 🌊🔵 Sui Testnet → Base Sepolia (0.001 SUI → 0.001 ETH)
+5. 🔵⭐ Base Sepolia → Stellar Testnet (0.001 ETH → 0.001 XLM)
+6. ⭐🔵 Stellar Testnet → Base Sepolia (0.001 XLM → 0.001 ETH)
+7. 🔵🔴 Base Sepolia → Tron Shasta (0.001 ETH → 0.001 TRX)
+8. 🔴🔵 Tron Shasta → Base Sepolia (0.001 TRX → 0.001 ETH)
+
 ### Web Interface Demo
 
 ```bash
 # Start both backend and frontend
 pnpm dev
 
-# Open browser to http://localhost:3001
+# Open browser to http://localhost:3000
 # - Interactive chain selection
 # - Real-time swap status tracking  
-# - One-click demo swaps
 # - Complete swap history
 ```
 
@@ -442,19 +464,26 @@ curl -X POST http://localhost:3000/api/demo/swap \
 
 ### Demo Features
 
-- ✨ **Interactive UI** - Modern React interface with Tailwind CSS
+**🚀 Live Demo Page (`/demo`):**
+- ✨ **Sleek Modern UI** - Dark gradient design with glassmorphism effects  
+- ⚡ **One-Click Execution** - 8 pre-configured swap pairs ready to run
+- 🎯 **Real-Time Results** - Live transaction tracking with explorer links
+- 📊 **Visual Status** - Color-coded success/failure indicators
+- 🔗 **Direct Explorer Links** - Click to view transactions on block explorers
+- 📱 **Responsive Design** - Perfect for demo videos and presentations
+
+**💼 Interactive Form (`/`):**
 - 🔄 **Real-time Updates** - Live swap status tracking
-- 🎯 **One-click Demo** - Instant cross-chain swap creation
 - 📊 **Swap History** - Complete transaction history with details
 - 🎨 **Chain Visualization** - Color-coded chain selection
 - 📱 **Responsive Design** - Works on desktop and mobile
 
 The demo showcases:
-- Multi-chain escrow deployment
-- HTLC secret/hash mechanism  
-- Atomic swap execution
-- Proper timelock handling
-- Error recovery capabilities
+- **4-Transaction Atomic Swaps** - Complete HTLC execution flow
+- **Multi-chain Escrow Deployment** - Real contracts on testnets
+- **HTLC Secret/Hash Mechanism** - Cryptographic proof system
+- **Explorer Integration** - Direct links to view all transactions
+- **Error Recovery** - Graceful handling of partial executions
 
 ## 📄 License
 

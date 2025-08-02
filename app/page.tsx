@@ -59,6 +59,13 @@ export default function HomePage() {
             </div>
             <div className="flex items-center space-x-4">
               <a
+                href="/demo"
+                className="flex items-center space-x-2 px-4 py-2 bg-purple-600/20 rounded-lg hover:bg-purple-600/30 transition-colors border border-purple-400/30"
+              >
+                <Zap className="w-4 h-4" />
+                <span className="font-semibold">Live Demo</span>
+              </a>
+              <a
                 href="https://github.com/your-repo"
                 target="_blank"
                 rel="noopener noreferrer"
