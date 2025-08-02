@@ -63,8 +63,8 @@ export async function POST(request: NextRequest) {
     (global as any).recentSwaps.set(swapOrder.orderId, {
       orderId: swapOrder.orderId,
       status: swapOrder.status,
-      srcChain: swapOrder.srcChainId,
-      dstChain: swapOrder.dstChainId,
+      srcChain: srcChain,  // Store the actual input field names
+      dstChain: dstChain,  // Store the actual input field names  
       makingAmount: swapOrder.makingAmount,    // REAL form amounts
       takingAmount: swapOrder.takingAmount,    // REAL form amounts
       makerAsset: swapOrder.makerAsset,

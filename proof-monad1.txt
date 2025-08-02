@@ -1,0 +1,61 @@
+📝 Stored swap 0xd26d7a588e67ea028e239209421d1069: 1000000000000000 base → 1000000000000000 monad
+📝 Stored swap data for status endpoint: 0xd26d7a588e67ea028e239209421d1069
+ POST /api/swap 200 in 318ms
+ ✓ Compiled /api/execute-swap in 102ms (325 modules)
+🚀 Executing REAL cross-chain swap: 0xd26d7a588e67ea028e239209421d1069
+📋 Found stored swap: base → monad
+🔑 Using stored secret: ae21e65a...
+💰 Swap details: 1000000000000000 base → 1000000000000000 monad
+🎯 Step 1: Alice creating escrow on base
+🔑 Base adapter using first wallet: 0x6Bd07000C5F746af69BEe7f151eb30285a6678B2
+🎯 Creating REAL 1inch LOP v4 order on Base Sepolia
+💰 Base LOP: 0.001 ETH → 1000000000000000 monad
+💰 Base wallet balance: 0.176998442453994495 ETH
+🎯 Computing order hash with actual 1inch LOP contract...
+✅ Contract connected! Domain separator: 0x7521ad7afc384cfaf350d39e66992fc09fca236aa2ee43ac935e65e63b9ecfb5
+✅ 1inch LOP order hash: 0x9fcc92b3f5837e4485d1ab6e694b671a595a5fecd9dcb746bc7487c5dabdf454
+✅ Order signed: 0x88f1c5ce8694011c5e...
+📋 Signature components: r=0x88f1c5ce8694011c5e76b432038a9089389b32f200d5fce14ea2212acc33c63d, vs=0x499d527440829ba48046dbfb1289015e94e23b25d8229ea8d93a49b08ba5eed50x0000000000000000000000000000000000000000000000000000000000000000
+📝 Order validation: new order (not yet tracked)
+🎯 Creating HTLC escrow that references 1inch LOP order
+✅ SUCCESS: 1inch LOP order + HTLC escrow created!
+🎉 Order hash: 0x9fcc92b3f5837e4485d1ab6e694b671a595a5fecd9dcb746bc7487c5dabdf454
+🔒 HTLC tx: 0x65293538b61f13a069467153da3bff70135deeebce5c98c49ef86bb212a41dca
+✅ Alice's base escrow created: 0x65293538b61f13a069467153da3bff70135deeebce5c98c49ef86bb212a41dca
+🎯 Step 2: Bob creating escrow on monad
+🔑 Monad adapter using second wallet: 0xe3B24b93C18eD1B7eEa9e07b3B03D03259f3942e
+🎯 Creating REAL Monad HTLC using deployed contract
+💰 Monad HTLC: 0.001 MON for order 0xd26d7a588e67ea028e239209421d1069
+💰 Wallet balance: 0.488191208 MON
+✅ HTLC contract exists, calling createHTLCEscrowMON...
+🎯 Bob (0xe3B24b93C18eD1B7eEa9e07b3B03D03259f3942e) creating escrow for Alice (0x6Bd07000C5F746af69BEe7f151eb30285a6678B2)
+✅ Monad HTLC contract called successfully
+🔍 Real escrow ID from event: 0x9b889e3b9c5569f1d72f99c7e7b399e22e7a658fa6cc453ea6d517b30b6ec5de
+✅ Bob's monad escrow created: 0xab67fed30786bd4bb2cf9a16f105dbc0e69b538c38834b4fa8bc670334b4b446
+🎯 Step 3: Both escrows created, executing atomic claims...
+🎯 Step 3a: Alice claiming Bob's monad funds
+🔑 Monad adapter using first wallet: 0x6Bd07000C5F746af69BEe7f151eb30285a6678B2
+🔗 Using real escrow ID: 0x9b889e3b9c5569f1d72f99c7e7b399e22e7a658fa6cc453ea6d517b30b6ec5de
+🎯 Claiming Monad HTLC escrow 0x9b889e3b9c5569f1d72f99c7e7b399e22e7a658fa6cc453ea6d517b30b6ec5de with secret
+📋 Escrow details: {
+  sender: '0xe3B24b93C18eD1B7eEa9e07b3B03D03259f3942e',
+  receiver: '0x6Bd07000C5F746af69BEe7f151eb30285a6678B2',
+  amount: '0.001',
+  withdrawn: false,
+  cancelled: false
+}
+🔍 Current wallet: 0x6Bd07000C5F746af69BEe7f151eb30285a6678B2
+🔍 Expected receiver: 0x6Bd07000C5F746af69BEe7f151eb30285a6678B2
+🔍 Wallet matches receiver: true
+🔍 Secret valid: true
+✅ Monad HTLC claimed successfully: 0x0b047fe163ee11d3a21c3746955a4b06d3c97a58c0186d5276f2b770496c6c8b
+✅ Alice claimed monad funds: 0x0b047fe163ee11d3a21c3746955a4b06d3c97a58c0186d5276f2b770496c6c8b
+🎯 Step 3b: Bob claiming Alice's base funds
+🔑 Base adapter using second wallet: 0xe3B24b93C18eD1B7eEa9e07b3B03D03259f3942e
+🔗 Using real escrow ID: lop_9fcc92b3
+🎯 Claiming Base HTLC escrow lop_9fcc92b3 with secret
+✅ Base HTLC claimed: 0x829fd857e1b4d6a80a5d5289836b8d3eb8b86d3e99434a6de7d7f9a7d928bac8
+✅ Bob claimed base funds: 0x829fd857e1b4d6a80a5d5289836b8d3eb8b86d3e99434a6de7d7f9a7d928bac8
+🎉 Swap 0xd26d7a588e67ea028e239209421d1069 completed successfully!
+📊 Final result: { success: true, resultsCount: 4, errorsCount: 0 }
+ POST /api/execute-swap?orderId=0xd26d7a588e67ea028e239209421d1069 200 in 21435ms
