@@ -176,9 +176,13 @@ export async function POST(request: NextRequest) {
         const aliceDstAdapter = getChainAdapter(swapOrder.dstChain, false); // Alice = first wallet
         
         // Only attempt claim if Bob actually used a contract (not fallback)
-        if (swapOrder.dstChain === 'monad' && bobUsedContract && bobEscrowId) {
+        if (bobUsedContract && bobEscrowId) {
           console.log(`🔗 Using real escrow ID: ${bobEscrowId}`);
-          const aliceClaimResult = await (aliceDstAdapter as any).claimHTLC(bobEscrowId, secret);
+          // Choose the right claim method based on destination chain
+          const aliceClaimResult = swapOrder.dstChain === 'base' 
+            ? await (aliceDstAdapter as any).claimHTLC(bobEscrowId, secret)  // Base uses HTLC-style claims
+            : await (aliceDstAdapter as any).claimHTLC(bobEscrowId, secret); // Other chains use HTLC
+          
           if (aliceClaimResult.success) {
             console.log(`✅ Alice claimed ${swapOrder.dstChain} funds: ${aliceClaimResult.txHash}`);
             results.push({
@@ -201,9 +205,13 @@ export async function POST(request: NextRequest) {
         const bobSrcAdapter = getChainAdapter(swapOrder.srcChain, true); // Bob = second wallet
         
         // Only attempt claim if Alice actually used a contract (not fallback)
-        if (swapOrder.srcChain === 'base' && aliceUsedContract && aliceEscrowId) {
+        if (aliceUsedContract && aliceEscrowId) {
           console.log(`🔗 Using real escrow ID: ${aliceEscrowId}`);
-          const bobClaimResult = await (bobSrcAdapter as any).claimHTLC(aliceEscrowId, secret);
+          // Choose the right claim method based on source chain
+          const bobClaimResult = swapOrder.srcChain === 'base'
+            ? await (bobSrcAdapter as any).claimHTLC(aliceEscrowId, secret)   // Base uses HTLC-style claims
+            : await (bobSrcAdapter as any).claimHTLC(aliceEscrowId, secret);  // Other chains use HTLC
+          
           if (bobClaimResult.success) {
             console.log(`✅ Bob claimed ${swapOrder.srcChain} funds: ${bobClaimResult.txHash}`);
             results.push({
