@@ -31,7 +31,7 @@ export default function NetworkStatus() {
         console.warn('Server unavailable, using static chain configuration');
         setNetworkInfo({
           network: process.env.NODE_ENV === 'production' ? 'mainnet' : 'testnet',
-          chains: ['base', 'stellar', 'sui', 'monad', 'tron'], // Static fallback
+          chains: ['base', 'stellar', 'sui', 'monad'], // Static fallback
           baseMode: 'static-config'
         });
       } finally {

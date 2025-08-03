@@ -11,8 +11,7 @@ contracts/
 │   └── TestEscrowFactory.sol # Test factory for 1inch
 ├── monad/             # Monad network contracts
 │   └── HTLCEscrow.sol # Custom HTLC for MON/ERC20
-├── tron/              # Tron network contracts
-│   └── HTLCEscrow.sol # Custom HTLC for TRX/TRC20
+
 ├── stellar/           # Stellar network contracts
 │   └── htlc_escrow.rs # Soroban HTLC contract
 ├── sui/               # Sui network contracts
@@ -37,11 +36,7 @@ contracts/
 - EVM-compatible, uses OpenZeppelin security
 - Functions: `createHTLCEscrowMON()`, `createHTLCEscrowERC20()`
 
-### **Tron** - Custom TVM HTLC
-- File: `tron/HTLCEscrow.sol`
-- Supports native TRX and TRC20 tokens
-- TVM-compatible with custom reentrancy protection
-- Functions: `createHTLCEscrowTRX()`, `createHTLCEscrowTRC20()`
+
 
 ### **Stellar** - Soroban Smart Contract
 - File: `stellar/htlc_escrow.rs`
@@ -92,7 +87,7 @@ if (block.timestamp < escrows[escrowId].timelock) revert TimelockNotExpired();
 - Stellar CLI (for Stellar)
 - Sui CLI (for Sui)
 
-### **EVM Chains (Monad, Tron)**
+### **EVM Chains (Monad)**
 ```bash
 # Compile contracts
 forge build
@@ -155,7 +150,7 @@ pnpm test:monad
 
 ## 📋 Contract Interfaces
 
-### **EVM Chains (Monad/Tron)**
+### **EVM Chains (Monad)**
 ```solidity
 interface IHTLCEscrow {
     // Create escrows

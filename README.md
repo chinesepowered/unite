@@ -1,12 +1,11 @@
 # Fusion+ Multi-Chain Extension
 
-A hackathon project extending 1inch Fusion+ cross-chain swaps to support 4 additional chains: **Monad**, **Tron**, **Sui**, and **Stellar**. This enables bidirectional atomic swaps between Ethereum and each of these chains using HTLC (Hashed Timelock Contracts).
+A hackathon project extending 1inch Fusion+ cross-chain swaps to support 3 additional chains: **Monad**, **Sui**, and **Stellar**. This enables bidirectional atomic swaps between Ethereum and each of these chains using HTLC (Hashed Timelock Contracts).
 
 ## 🎯 Project Goal
 
 Expand 1inch Cross-chain Swap (Fusion+) to enable swaps between Ethereum and the following chains:
 - ⚡ **Monad** (EVM-compatible)
-- 🌟 **Tron** (TVM)
 - 🔵 **Sui** (Move-based)
 - ✨ **Stellar** (Stellar Consensus Protocol)
 
@@ -73,9 +72,7 @@ STELLAR_PRIVATE_KEY=S... # Stellar secret key format (starts with S)
 SUI_RPC_URL=https://fullnode.testnet.sui.io:443
 SUI_PRIVATE_KEY=0x... # Sui private key
 
-# Tron Shasta Testnet
-TRON_RPC_URL=https://api.shasta.trongrid.io
-TRON_PRIVATE_KEY=0x... # Tron private key
+
 ```
 
 ## 🧪 Testnet Setup Guide
@@ -106,11 +103,7 @@ TRON_PRIVATE_KEY=0x... # Tron private key
 - **Required**: ~1 SUI for testing
 - **Setup**: Install Sui CLI for key management
 
-#### 5. Tron Shasta Testnet
-- **Faucet**: https://www.trongrid.io/shasta
-- **Required**: ~1000 TRX for testing
-- **Energy**: May need additional energy for contract calls
-- **Backup Faucet**: https://shasta.tronex.io/
+
 
 ### Account Setup Steps
 
@@ -227,10 +220,7 @@ pnpm test:integration
 - Native SUI and custom coin support
 - Transaction block composition
 
-### Tron
-- TVM-compatible HTLC contracts
-- Native TRX and TRC20 support
-- TronWeb integration
+
 
 ## 🔒 Security Features
 
@@ -278,7 +268,7 @@ function partialWithdraw(
 ```
 
 ### Implementation Complexity
-- **Monad/Tron**: 🟡 Medium (EVM-compatible, can adapt 1inch patterns)
+- **Monad**: 🟡 Medium (EVM-compatible, can adapt 1inch patterns)
 - **Stellar**: 🔴 Hard (Limited Merkle tree support, requires custom logic)
 - **Sui**: 🟡 Medium (Move vectors can handle tree operations)
 
@@ -430,8 +420,7 @@ pnpm dev
 4. 🌊🔵 Sui Testnet → Base Sepolia (0.001 SUI → 0.001 ETH)
 5. 🔵⭐ Base Sepolia → Stellar Testnet (0.001 ETH → 0.001 XLM)
 6. ⭐🔵 Stellar Testnet → Base Sepolia (0.001 XLM → 0.001 ETH)
-7. 🔵🔴 Base Sepolia → Tron Shasta (0.001 ETH → 0.001 TRX)
-8. 🔴🔵 Tron Shasta → Base Sepolia (0.001 TRX → 0.001 ETH)
+
 
 ### Web Interface Demo
 
@@ -484,14 +473,6 @@ The demo showcases:
 - **HTLC Secret/Hash Mechanism** - Cryptographic proof system
 - **Explorer Integration** - Direct links to view all transactions
 - **Error Recovery** - Graceful handling of partial executions
-
-## 📄 License
-
-MIT License - Built for 1inch Hackathon
-
-## 🤝 Contributing
-
-This is a hackathon project. For production use, additional testing, security audits, and optimizations would be required.
 
 ---
 

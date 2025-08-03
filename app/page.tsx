@@ -100,10 +100,6 @@ export default function HomePage() {
               <span>🔵</span>
               <span>Sui</span>
             </div>
-            <div className="flex items-center space-x-1">
-              <span>🌟</span>
-              <span>Tron</span>
-            </div>
           </div>
         </div>
       </div>
@@ -238,7 +234,6 @@ export default function HomePage() {
             <span>Monad 🚀</span>
             <span>Stellar ✨</span>
             <span>Sui 🔵</span>
-            <span>Tron 🌟</span>
           </div>
         </div>
       </div>

@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "United | 1inch Hackathon",
-  description: "Cross-chain atomic swaps between Ethereum and Monad, Tron, Sui, Stellar",
+  description: "Cross-chain atomic swaps between Ethereum and Monad, Sui, Stellar",
 };
 
 export default function RootLayout({

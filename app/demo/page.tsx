@@ -114,32 +114,7 @@ const swapConfigs: SwapConfig[] = [
     dstIcon: "🔵",
     gradient: "from-yellow-500 to-blue-500"
   },
-  {
-    id: 7,
-    title: "Base → Tron",
-    srcChain: "base",
-    dstChain: "tron",
-    srcToken: "ETH",
-    dstToken: "TRX",
-    amount: "0.001",
-    description: "Base Sepolia to Tron Shasta",
-    srcIcon: "🔵",
-    dstIcon: "🔴",
-    gradient: "from-blue-500 to-red-500"
-  },
-  {
-    id: 8,
-    title: "Tron → Base", 
-    srcChain: "tron",
-    dstChain: "base",
-    srcToken: "TRX",
-    dstToken: "ETH",
-    amount: "0.001",
-    description: "Tron Shasta to Base Sepolia",
-    srcIcon: "🔴",
-    dstIcon: "🔵", 
-    gradient: "from-red-500 to-blue-500"
-  }
+
 ];
 
 // Helper function to calculate correct amounts for each chain (0.001 units)
@@ -152,8 +127,6 @@ const getChainAmount = (chain: string): string => {
       return "1000000"; // 0.001 SUI in MIST
     case 'stellar':
       return "10000"; // 0.001 XLM in stroops
-    case 'tron':
-      return "1000000"; // 0.001 TRX in sun
     default:
       return "1000000000000000"; // Default to wei
   }
