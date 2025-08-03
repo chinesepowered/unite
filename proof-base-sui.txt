@@ -1,0 +1,121 @@
+📝 Stored swap 0xa58e985af23f444f1797a7dd7efc6583: 1000000000000000 base → 1000000 sui
+📝 Stored swap data for status endpoint: 0xa58e985af23f444f1797a7dd7efc6583
+ POST /api/swap 200 in 803ms
+🚀 Executing REAL cross-chain swap: 0xa58e985af23f444f1797a7dd7efc6583
+📋 Found stored swap: base → sui
+🔑 Using stored secret: b42ccfc4...
+💰 Swap details: 1000000000000000 base → 1000000 sui
+🎯 Step 1: Alice creating escrow on base
+🔑 Base adapter using first wallet: 0x6Bd07000C5F746af69BEe7f151eb30285a6678B2
+🎯 Creating REAL 1inch LOP v4 order on Base Sepolia
+💰 Base LOP: 0.001 ETH → 1000000 sui
+ GET /demo 200 in 427ms
+💰 Base wallet balance: 0.171988697810331315 ETH
+🎯 Computing order hash with actual 1inch LOP contract...
+✅ Contract connected! Domain separator: 0x7521ad7afc384cfaf350d39e66992fc09fca236aa2ee43ac935e65e63b9ecfb5
+✅ 1inch LOP order hash: 0xe10763f8c83a5789a371b95890ece989f52f7674934a8bb3e729285066e08857
+✅ Order signed: 0xbecbf848d5bf528d46...
+📋 Signature components: r=0xbecbf848d5bf528d46914d17e34738610f0033e46e24723526319eb6052fe3f7, vs=0xbe1351b9c469ed0dc2af233e9f4b88510568d490baa702f87e48daf921a5aab8
+📝 Order validation: new order (not yet tracked)
+🎯 1inch LOP order created and signed (hackathon requirement ✅)
+🔄 Using HTLC for actual atomic swap escrow security
+💰 Escrow amount: 0.001 ETH
+🔗 Order hash: 0xe10763f8c83a5789a371b95890ece989f52f7674934a8bb3e729285066e08857
+🔧 Creating HTLC escrow for atomic swap security...
+🔧 Calling HTLC with amount: 0.001 ETH
+🔧 Timelock: 1754194151 (2025-08-03T04:09:11.000Z)
+✅ SUCCESS: 1inch LOP + HTLC escrow created!
+🎉 1inch Order hash: 0xe10763f8c83a5789a371b95890ece989f52f7674934a8bb3e729285066e08857
+🔒 HTLC tx: 0x8dbf21cb542ce6c678ad8e533476bb3ad0c9cafcbf62f786845925582860e098
+🔍 Real HTLC escrow ID: 0x0d7418efb857c3bbbef128cfab4f26a7ffefe77f6c3d965e5fee8085b49aae18
+✅ Alice's base escrow created: 0x8dbf21cb542ce6c678ad8e533476bb3ad0c9cafcbf62f786845925582860e098
+🎯 Step 2: Bob creating escrow on sui
+🔑 Sui adapter using second wallet
+🔑 Loading REAL Sui wallet from Bech32 private key
+🔧 Using latest Sui SDK for Bech32 decoding
+🔍 Decoding key: suiprivkey1qzjrp6k7m...
+✅ Keypair created successfully with latest SDK
+✅ Sui client initialized for address: 0x5a508e23daf5aa33196da69d8c4161fb84851f4ec2cfcc8db1618369205ddcb2
+🎯 Creating REAL Sui HTLC escrow using Move contract
+💰 Sui amount: 0.001 SUI for base → sui swap
+🔍 Sui wallet address: 0x5a508e23daf5aa33196da69d8c4161fb84851f4ec2cfcc8db1618369205ddcb2
+💰 Current SUI balance: 0.89642202 SUI
+🎯 Bob (0x5a508e23daf5aa33196da69d8c4161fb84851f4ec2cfcc8db1618369205ddcb2) creating HTLC escrow for Alice (0xc1cdc0da8efc173ee3742274ba0174a944f2170cb9955642a1f0c9c91c255b8f)
+💰 HTLC amount: 1000000 MIST (0.001 SUI)
+🔍 SecretHash array: length=32, first4=[142,246,248,164]
+🔗 Calling create_escrow with:
+   Package: 0x04cf15bd22b901053411485b652914f92a2cb1c337e10e5a45a839e1c7ac3f8e
+   Receiver: 0xc1cdc0da8efc173ee3742274ba0174a944f2170cb9955642a1f0c9c91c255b8f
+   Secret hash: 0x8ef6f8a4863e692955acf691edc5d69812489c45a1d1ea914670aac738461549 (32 bytes)
+   Timelock: 1754194152850 (2025-08-03T04:09:12.850Z)
+   Order ID: 0xa58e985af23f444f1797a7dd7efc6583
+🔧 Attempting Move call with modern SDK format...
+✅ Move call added to transaction successfully
+🔗 Calling Sui Move HTLC contract at 0x04cf15bd22b901053411485b652914f92a2cb1c337e10e5a45a839e1c7ac3f8e
+✅ REAL Sui HTLC contract called successfully
+🔍 Transaction status: success
+🔍 Checking transaction effects for created objects...
+🔍 Found 1 created objects: [
+  {
+    objectId: '0x6557fae1d3a40eabd484854621d1f6e1ea32f1fe08be3772d557638b5fa72061',
+    owner: { Shared: [Object] }
+  }
+]
+🔍 Found shared escrow object: 0x6557fae1d3a40eabd484854621d1f6e1ea32f1fe08be3772d557638b5fa72061
+✅ Bob's sui escrow created: 9i6rqeMGUe1vLUESbAKh2Ht3cZXTXL8qHs1kW7TZnyE1
+🎯 Step 3: Both escrows created, executing atomic claims...
+🎯 Step 3a: Alice claiming Bob's sui funds
+🔑 Sui adapter using first wallet
+🔑 Loading REAL Sui wallet from Bech32 private key
+🔧 Using latest Sui SDK for Bech32 decoding
+🔍 Decoding key: suiprivkey1qrmaf055y...
+✅ Keypair created successfully with latest SDK
+✅ Sui client initialized for address: 0xc1cdc0da8efc173ee3742274ba0174a944f2170cb9955642a1f0c9c91c255b8f
+🔗 Using real escrow ID: 0x6557fae1d3a40eabd484854621d1f6e1ea32f1fe08be3772d557638b5fa72061
+🔍 About to call Alice's claimHTLC with secret: b42ccfc487fea009...
+🚀 ENTRY: claimHTLC called with escrowId=0x6557fae1d3a40eabd484854621d1f6e1ea32f1fe08be3772d557638b5fa72061, secret=b42ccfc487fea009...
+🔧 Keypair address: 0xc1cdc0da8efc173ee3742274ba0174a944f2170cb9955642a1f0c9c91c255b8f
+🔧 Package ID: 0x04cf15bd22b901053411485b652914f92a2cb1c337e10e5a45a839e1c7ac3f8e
+🎯 Claiming REAL Sui HTLC escrow 0x6557fae1d3a40eabd484854621d1f6e1ea32f1fe08be3772d557638b5fa72061 with secret
+🔍 Secret for claim: b42ccfc487fea009...
+🔍 Claiming with wallet: 0xc1cdc0da8efc173ee3742274ba0174a944f2170cb9955642a1f0c9c91c255b8f
+💰 SUI balance for claim: 0.91526778 SUI
+🔍 Received escrow ID: 0x6557fae1d3a40eabd484854621d1f6e1ea32f1fe08be3772d557638b5fa72061
+✅ Using real Sui object ID: 0x6557fae1d3a40eabd484854621d1f6e1ea32f1fe08be3772d557638b5fa72061
+⏳ Waiting for escrow object to become available...
+✅ Escrow object confirmed available after 1 attempts
+🔗 Attempting to claim from escrow object: 0x6557fae1d3a40eabd484854621d1f6e1ea32f1fe08be3772d557638b5fa72061
+🔧 Creating Transaction object...
+✅ Transaction object created successfully
+🔍 Secret processing: original="b42ccfc487fea009dc4370e1f623f5c1d1ebb41ae17a77bc68c2aa1de92b4f71", clean="b42ccfc487fea009dc4370e1f623f5c1d1ebb41ae17a77bc68c2aa1de92b4f71", length=64
+🔍 Secret bytes: length=32, first4=180,44,207,196
+🔍 Secret array: length=32, first4=[180,44,207,196]
+🔗 Calling withdraw with:
+   Package: 0x04cf15bd22b901053411485b652914f92a2cb1c337e10e5a45a839e1c7ac3f8e
+   Escrow Object: 0x6557fae1d3a40eabd484854621d1f6e1ea32f1fe08be3772d557638b5fa72061
+   Secret: b42ccfc487fea009... (32 bytes)
+🔧 About to call moveCall for withdraw...
+🔧 Arguments will be: escrow=0x6557fae1d3a40eabd484854621d1f6e1ea32f1fe08be3772d557638b5fa72061, secret=[32 bytes], clock=0x6
+🔧 Calling tx.moveCall...
+✅ moveCall completed successfully
+🔗 About to sign and execute Sui Move HTLC withdraw transaction
+🔧 Transaction built successfully, executing...
+✅ Transaction executed, digest: E2QJ6sYvMJfaBBLoCY6eXbXjC12Trk2a3QLpGf7wiVtQ
+🔍 Transaction status: success
+✅ REAL Sui HTLC claim successful: E2QJ6sYvMJfaBBLoCY6eXbXjC12Trk2a3QLpGf7wiVtQ
+🔍 Alice's claimHTLC returned: {
+  txHash: 'E2QJ6sYvMJfaBBLoCY6eXbXjC12Trk2a3QLpGf7wiVtQ',
+  explorerUrl: 'https://testnet.suivision.xyz/txblock/E2QJ6sYvMJfaBBLoCY6eXbXjC12Trk2a3QLpGf7wiVtQ',
+  success: true
+}
+✅ Alice claimed sui funds: E2QJ6sYvMJfaBBLoCY6eXbXjC12Trk2a3QLpGf7wiVtQ
+🎯 Step 3b: Bob claiming Alice's base funds
+🔑 Base adapter using second wallet: 0xe3B24b93C18eD1B7eEa9e07b3B03D03259f3942e
+🔗 Using real escrow ID: 0x0d7418efb857c3bbbef128cfab4f26a7ffefe77f6c3d965e5fee8085b49aae18
+🎯 Claiming Base HTLC escrow 0x0d7418efb857c3bbbef128cfab4f26a7ffefe77f6c3d965e5fee8085b49aae18 with secret
+✅ Base HTLC claimed: 0x5f9ffb99455efaa081efdd8a60765de3c6f6769ee0e59b9d0dc0ea52d9ed4873
+✅ Bob claimed base funds: 0x5f9ffb99455efaa081efdd8a60765de3c6f6769ee0e59b9d0dc0ea52d9ed4873
+🎉 Swap 0xa58e985af23f444f1797a7dd7efc6583 completed successfully!
+📊 Final result: { success: true, resultsCount: 4, errorsCount: 0 }
+ POST /api/execute-swap?orderId=0xa58e985af23f444f1797a7dd7efc6583 200 in 9185ms
+
