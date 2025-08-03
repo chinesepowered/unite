@@ -119,3 +119,11 @@
 📊 Final result: { success: true, resultsCount: 4, errorsCount: 0 }
  POST /api/execute-swap?orderId=0xa58e985af23f444f1797a7dd7efc6583 200 in 9185ms
 
+alice escrow - base
+https://sepolia.basescan.org/tx/0x8dbf21cb542ce6c678ad8e533476bb3ad0c9cafcbf62f786845925582860e098
+bob escrow - sui
+https://testnet.suivision.xyz/txblock/9i6rqeMGUe1vLUESbAKh2Ht3cZXTXL8qHs1kW7TZnyE1
+alice claim - sui
+https://testnet.suivision.xyz/txblock/E2QJ6sYvMJfaBBLoCY6eXbXjC12Trk2a3QLpGf7wiVtQ
+bob claim - base
+https://sepolia.basescan.org/tx/0x5f9ffb99455efaa081efdd8a60765de3c6f6769ee0e59b9d0dc0ea52d9ed4873
