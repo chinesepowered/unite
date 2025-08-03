@@ -20,8 +20,8 @@ export async function POST(request: NextRequest) {
     // Generate real HTLC parameters
     const orderId = '0x' + randomBytes(16).toString('hex');
     const secret = randomBytes(32).toString('hex');
-    // Hash the secret using keccak256 to match Solidity's keccak256(abi.encodePacked(secret))
-    const secretHash = ethers.keccak256(ethers.toUtf8Bytes(secret));
+    // Hash the secret using keccak256 of raw bytes to match Sui Move's hash::keccak256(&secret)
+    const secretHash = ethers.keccak256('0x' + secret);
     
     const currentTime = Math.floor(Date.now() / 1000);
     

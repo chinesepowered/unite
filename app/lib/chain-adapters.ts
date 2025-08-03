@@ -643,7 +643,7 @@ export class SuiAdapter {
       
       // Convert secret hash from hex to bytes
       const secretHashHex = order.secretHash.replace('0x', '');
-      const secretHashBytes = Array.from(Buffer.from(secretHashHex, 'hex'));
+      const secretHashBytes = Buffer.from(secretHashHex, 'hex');
       
       // Calculate timelock (1 hour from now in milliseconds)
       const timelock = Date.now() + 3600000; // 1 hour
@@ -663,10 +663,10 @@ export class SuiAdapter {
           typeArguments: ['0x2::sui::SUI'],
           arguments: [
             htlcCoin,
-            tx.pure(receiverAddress, 'address'),
+            tx.pure.address(receiverAddress),
             tx.pure(secretHashBytes, 'vector<u8>'),
-            tx.pure(timelock, 'u64'),
-            tx.pure(order.orderId, 'string'),
+            tx.pure.u64(timelock),
+            tx.pure.string(order.orderId),
             tx.object(clockObjectId)
           ]
         });
@@ -870,7 +870,7 @@ export class SuiAdapter {
       const tx = new Transaction();
       
       // Convert secret to bytes
-      const secretBytes = Array.from(Buffer.from(secret.replace('0x', ''), 'hex'));
+      const secretBytes = Buffer.from(secret.replace('0x', ''), 'hex');
       
       // Get shared Clock object
       const clockObjectId = '0x6'; // Standard Sui Clock object
@@ -893,7 +893,7 @@ export class SuiAdapter {
         });
         
         // Transfer the claimed coin to the receiver
-        tx.transferObjects([claimedCoin], address);
+        tx.transferObjects([claimedCoin], tx.pure.address(address));
         
         console.log(`🔗 Calling Sui Move HTLC withdraw at ${this.packageId}`);
         
@@ -961,6 +961,53 @@ export class SuiAdapter {
       
     } catch (error) {
       console.error('Sui claim transaction error:', error);
+      return {
+        txHash: '',
+        explorerUrl: '',
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }
+
+  async claimHTLC(escrowId: string, secret: string): Promise<TransactionResult> {
+    try {
+      const address = this.keypair.toSuiAddress();
+      const { Transaction } = require('@mysten/sui/transactions');
+      const tx = new Transaction();
+      const secretBytes = new Uint8Array(Buffer.from(secret.replace('0x', ''), 'hex'));
+      const clockObjectId = '0x6';
+
+      const [claimedCoin] = tx.moveCall({
+        target: `${this.packageId}::escrow::withdraw`,
+        typeArguments: ['0x2::sui::SUI'],
+        arguments: [
+          tx.object(escrowId),
+          tx.pure(secretBytes),
+          tx.object(clockObjectId),
+        ]
+      });
+
+      tx.transferObjects([claimedCoin], tx.pure.address(address));
+
+      const response = await this.client.signAndExecuteTransaction({
+        signer: this.keypair,
+        transaction: tx,
+        options: {
+          showEffects: true,
+        }
+      });
+
+      if (response.effects?.status?.status !== 'success') {
+        throw new Error(`Sui HTLC withdraw failed: ${response.effects?.status?.error}`);
+      }
+
+      return {
+        txHash: response.digest,
+        explorerUrl: `https://testnet.suivision.xyz/txblock/${response.digest}`,
+        success: true
+      };
+    } catch (error) {
       return {
         txHash: '',
         explorerUrl: '',
