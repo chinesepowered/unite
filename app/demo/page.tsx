@@ -142,6 +142,23 @@ const swapConfigs: SwapConfig[] = [
   }
 ];
 
+// Helper function to calculate correct amounts for each chain (0.001 units)
+const getChainAmount = (chain: string): string => {
+  switch (chain) {
+    case 'base':
+    case 'monad':
+      return "1000000000000000"; // 0.001 ETH/MON in wei
+    case 'sui':
+      return "1000000"; // 0.001 SUI in MIST
+    case 'stellar':
+      return "10000"; // 0.001 XLM in stroops
+    case 'tron':
+      return "1000000"; // 0.001 TRX in sun
+    default:
+      return "1000000000000000"; // Default to wei
+  }
+};
+
 export default function DemoPage() {
   const [results, setResults] = useState<Record<number, SwapResult>>({});
   const [loading, setLoading] = useState<Record<number, boolean>>({});
@@ -158,8 +175,8 @@ export default function DemoPage() {
         body: JSON.stringify({
           srcChain: config.srcChain,
           dstChain: config.dstChain,
-          srcAmount: "1000000000000000", // 0.001 in wei
-          dstAmount: "1000000000000000", // 0.001 in wei  
+          srcAmount: getChainAmount(config.srcChain), // Correct amount for source chain
+          dstAmount: getChainAmount(config.dstChain), // Correct amount for destination chain
           srcToken: config.srcToken,
           dstToken: config.dstToken
         })

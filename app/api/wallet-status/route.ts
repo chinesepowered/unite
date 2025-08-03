@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getChainAdapter } from '../../lib/real-chain-adapters';
+import { getChainAdapter } from '../../lib/chain-adapters';
 
 export async function GET() {
   try {
