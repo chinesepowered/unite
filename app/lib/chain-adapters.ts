@@ -638,28 +638,43 @@ export class SuiAdapter {
       // Split coins for the HTLC escrow
       const [htlcCoin] = tx.splitCoins(tx.gas, [amountInMist]);
       
-      // Get shared Clock object (standard Sui object)
+      // Get shared Clock object (standard Sui system object)
       const clockObjectId = '0x6'; // Standard Sui Clock object
       
       // Convert secret hash from hex to bytes
-      const secretHashBytes = Array.from(Buffer.from(order.secretHash.replace('0x', ''), 'hex'));
+      const secretHashHex = order.secretHash.replace('0x', '');
+      const secretHashBytes = Array.from(Buffer.from(secretHashHex, 'hex'));
       
       // Calculate timelock (1 hour from now in milliseconds)
       const timelock = Date.now() + 3600000; // 1 hour
       
+      console.log(`🔗 Calling create_escrow with:`);
+      console.log(`   Package: ${this.packageId}`);
+      console.log(`   Receiver: ${receiverAddress}`);
+      console.log(`   Secret hash: ${order.secretHash} (${secretHashBytes.length} bytes)`);
+      console.log(`   Timelock: ${timelock} (${new Date(timelock).toISOString()})`);
+      console.log(`   Order ID: ${order.orderId}`);
+      
       // Call the Sui Move HTLC contract's create_escrow function
-      tx.moveCall({
-        target: `${this.packageId}::escrow::create_escrow`,
-        typeArguments: ['0x2::sui::SUI'], // Using SUI coin type
-        arguments: [
-          htlcCoin, // coin_input: Coin<SUI>
-          tx.pure.address(receiverAddress), // receiver: address
-          tx.pure.vector('u8', secretHashBytes), // secret_hash: vector<u8>
-          tx.pure.u64(timelock), // timelock: u64
-          tx.pure.string(order.orderId), // order_id: String
-          tx.object(clockObjectId) // clock_obj: &Clock
-        ]
-      });
+      console.log(`🔧 Attempting Move call with modern SDK format...`);
+      try {
+        tx.moveCall({
+          target: `${this.packageId}::escrow::create_escrow`,
+          typeArguments: ['0x2::sui::SUI'],
+          arguments: [
+            htlcCoin,
+            tx.pure(receiverAddress, 'address'),
+            tx.pure(secretHashBytes, 'vector<u8>'),
+            tx.pure(timelock, 'u64'),
+            tx.pure(order.orderId, 'string'),
+            tx.object(clockObjectId)
+          ]
+        });
+        console.log(`✅ Move call added to transaction successfully`);
+      } catch (moveCallError) {
+        console.error(`❌ Move call creation failed:`, moveCallError);
+        throw new Error(`Move call syntax error: ${moveCallError instanceof Error ? moveCallError.message : String(moveCallError)}`);
+      }
       
       console.log(`🔗 Calling Sui Move HTLC contract at ${this.packageId}`);
       
@@ -676,12 +691,40 @@ export class SuiAdapter {
       console.log(`✅ REAL Sui HTLC contract called successfully`);
       console.log(`🔍 Transaction status:`, response.effects?.status?.status);
       
-      // Extract escrow ID from events (like Monad does)
+      // Check if transaction actually succeeded
+      if (response.effects?.status?.status !== 'success') {
+        console.error(`❌ Transaction failed with status: ${response.effects?.status?.status}`);
+        if (response.effects?.status?.error) {
+          console.error(`❌ Error details:`, response.effects.status.error);
+        }
+        throw new Error(`Sui transaction failed: ${response.effects?.status?.status}`);
+      }
+      
+      // Extract escrow object ID from the transaction effects
       let escrowId: string | undefined;
-      if (response.events) {
+      
+      // Method 1: Look for the shared object created by the Move contract
+      console.log(`🔍 Checking transaction effects for created objects...`);
+      if (response.effects?.created) {
+        console.log(`🔍 Found ${response.effects.created.length} created objects:`, 
+          response.effects.created.map(c => ({ objectId: c.reference?.objectId, owner: c.owner })));
+        
+        for (const created of response.effects.created) {
+          // Look for shared objects (HTLCEscrow objects are shared)
+          if (created.owner === 'Shared') {
+            escrowId = created.reference?.objectId;
+            console.log(`🔍 Found shared escrow object: ${escrowId}`);
+            break;
+          }
+        }
+      } else {
+        console.log(`⚠️ No effects.created found in response`);
+      }
+      
+      // Method 2: Look for events if shared object not found
+      if (!escrowId && response.events) {
         for (const event of response.events) {
           if (event.type.includes('EscrowCreated')) {
-            // Extract escrow ID from the event data
             const eventData = event.parsedJson as any;
             if (eventData && eventData.escrow_id) {
               escrowId = eventData.escrow_id;
@@ -692,10 +735,26 @@ export class SuiAdapter {
         }
       }
       
+      // Method 3: Look in object changes for created objects
+      if (!escrowId && response.objectChanges) {
+        for (const change of response.objectChanges) {
+          if (change.type === 'created' && change.objectType?.includes('HTLCEscrow')) {
+            escrowId = change.objectId;
+            console.log(`🔍 Found HTLCEscrow object in changes: ${escrowId}`);
+            break;
+          }
+        }
+      }
+      
       if (!escrowId) {
-        // Fallback: generate escrow ID from transaction
+        console.error(`❌ Could not extract escrow object ID from transaction`);
+        console.log(`🔍 Transaction effects:`, JSON.stringify(response.effects, null, 2));
+        console.log(`🔍 Transaction events:`, JSON.stringify(response.events, null, 2));
+        console.log(`🔍 Object changes:`, JSON.stringify(response.objectChanges, null, 2));
+        
+        // Use a fallback but mark as potentially problematic
         escrowId = `sui_htlc_${response.digest.slice(2, 16)}`;
-        console.log(`⚠️ Could not extract escrow ID from events, using fallback: ${escrowId}`);
+        console.log(`⚠️ Using fallback escrow ID (may cause claim failures): ${escrowId}`);
       }
       
       return {
@@ -707,7 +766,27 @@ export class SuiAdapter {
       };
       
     } catch (error) {
-      console.error('Sui HTLC contract error:', error);
+      console.error('🚫 Sui HTLC contract error details:', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        name: error instanceof Error ? error.name : undefined
+      });
+      
+      // For debugging: let's see the exact error without fallback for now
+      if (error instanceof Error && (
+        error.message.includes('moveCall') || 
+        error.message.includes('pure') ||
+        error.message.includes('object') ||
+        error.message.includes('Transaction')
+      )) {
+        console.log(`🔍 This looks like a Move call syntax error, failing explicitly for debugging`);
+        return {
+          txHash: '',
+          explorerUrl: '',
+          success: false,
+          error: `Move call failed: ${error.message}`
+        };
+      }
       
       // Fallback to simple transfer if contract fails
       console.log(`⚠️ HTLC contract call failed, using fallback transfer...`);
@@ -764,18 +843,25 @@ export class SuiAdapter {
         console.log(`⚠️ Could not check balance for claim: ${balanceError.message}`);
       }
 
-      // First, try to find the escrow object from recent transactions
-      let escrowObjectId: string | undefined;
+      // Parse the escrow ID to determine if it's a real object ID
+      let escrowObjectId: string;
       
-      // If escrowId looks like an object ID, use it directly
-      if (escrowId.startsWith('0x') && escrowId.length > 20) {
+      console.log(`🔍 Received escrow ID: ${escrowId}`);
+      
+      // Check if it looks like a real Sui object ID (0x followed by 64 hex chars)
+      const objectIdPattern = /^0x[a-fA-F0-9]{64}$/;
+      if (objectIdPattern.test(escrowId)) {
         escrowObjectId = escrowId;
+        console.log(`✅ Using real Sui object ID: ${escrowObjectId}`);
+      } else if (escrowId.startsWith('0x') && escrowId.length >= 32) {
+        // Might be a valid object ID, try it
+        escrowObjectId = escrowId;
+        console.log(`🔄 Attempting to use provided ID: ${escrowObjectId}`);
       } else {
-        // Otherwise, this might be our generated ID from the transaction hash
-        console.log(`⚠️ Escrow ID ${escrowId} might be a generated ID, attempting to find real object`);
-        
-        // For now, we'll attempt to use it as is and handle errors
-        escrowObjectId = escrowId;
+        // This is likely a fallback ID, which won't work for real HTLC claims
+        console.error(`❌ Invalid escrow ID format: ${escrowId}`);
+        console.log(`🔍 Expected format: 0x followed by 64 hex characters`);
+        throw new Error(`Invalid escrow object ID: ${escrowId}. Cannot claim from non-existent object.`);
       }
       
       console.log(`🔗 Attempting to claim from escrow object: ${escrowObjectId}`);
@@ -790,13 +876,18 @@ export class SuiAdapter {
       const clockObjectId = '0x6'; // Standard Sui Clock object
       
       try {
+        console.log(`🔗 Calling withdraw with:`);
+        console.log(`   Package: ${this.packageId}`);
+        console.log(`   Escrow Object: ${escrowObjectId}`);
+        console.log(`   Secret: ${secret.slice(0, 16)}... (${secretBytes.length} bytes)`);
+        
         // Call the Sui Move HTLC contract's withdraw function
         const [claimedCoin] = tx.moveCall({
           target: `${this.packageId}::escrow::withdraw`,
           typeArguments: ['0x2::sui::SUI'], // Using SUI coin type
           arguments: [
             tx.object(escrowObjectId), // escrow: &mut HTLCEscrow<SUI>
-            tx.pure.vector('u8', secretBytes), // secret: vector<u8>
+            tx.pure(secretBytes, 'vector<u8>'), // secret: vector<u8>
             tx.object(clockObjectId), // clock_obj: &Clock
           ]
         });
@@ -826,7 +917,26 @@ export class SuiAdapter {
         };
         
       } catch (contractError) {
-        console.log(`⚠️ HTLC contract withdraw failed: ${contractError.message}`);
+        console.error(`🚫 HTLC contract withdraw failed:`, {
+          error: contractError instanceof Error ? contractError.message : String(contractError),
+          stack: contractError instanceof Error ? contractError.stack : undefined,
+          escrowId: escrowObjectId
+        });
+        
+        // For debugging: fail explicitly if it's a Move call error
+        if (contractError instanceof Error && (
+          contractError.message.includes('moveCall') || 
+          contractError.message.includes('object') ||
+          contractError.message.includes('pure')
+        )) {
+          console.log(`🔍 This looks like a Move withdraw call error, failing explicitly for debugging`);
+          return {
+            txHash: '',
+            explorerUrl: '',
+            success: false,
+            error: `Sui HTLC withdraw failed: ${contractError.message}`
+          };
+        }
         
         // Fallback to simple transfer (for demo purposes)
         console.log(`🔄 Using fallback claim method...`);
