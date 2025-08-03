@@ -641,9 +641,11 @@ export class SuiAdapter {
       // Get shared Clock object (standard Sui system object)
       const clockObjectId = '0x6'; // Standard Sui Clock object
       
-      // Convert secret hash from hex to bytes for BCS encoding
+      // Convert secret hash from hex to bytes for BCS encoding  
       const secretHashHex = order.secretHash.replace('0x', '');
       const secretHashBytes = Buffer.from(secretHashHex, 'hex');
+      const secretHashArray = Array.from(secretHashBytes);
+      console.log(`🔍 SecretHash array: length=${secretHashArray.length}, first4=[${secretHashArray.slice(0, 4).join(',')}]`);
       
       // Calculate timelock (1 hour from now in milliseconds)
       const timelock = Date.now() + 3600000; // 1 hour
@@ -664,7 +666,7 @@ export class SuiAdapter {
           arguments: [
             htlcCoin,
             tx.pure.address(receiverAddress),
-            tx.pure.vector('u8', Array.from(secretHashBytes)),
+            tx.pure.vector('u8', secretHashArray),
             tx.pure.u64(timelock),
             tx.pure.string(order.orderId),
             tx.object(clockObjectId)
@@ -825,7 +827,15 @@ export class SuiAdapter {
 
   async claimHTLC(escrowId: string, secret: string): Promise<TransactionResult> {
     try {
+      console.log(`🚀 ENTRY: claimHTLC called with escrowId=${escrowId}, secret=${secret.slice(0, 16)}...`);
+      console.log(`🔧 Keypair address: ${this.keypair?.toSuiAddress() || 'UNDEFINED'}`);
+      console.log(`🔧 Package ID: ${this.packageId}`);
+      
+      if (!this.keypair) {
+        throw new Error('Keypair not available for Sui claim');
+      }
       console.log(`🎯 Claiming REAL Sui HTLC escrow ${escrowId} with secret`);
+      console.log(`🔍 Secret for claim: ${secret.slice(0, 16)}...`);
       
       const address = this.keypair.toSuiAddress();
       console.log(`🔍 Claiming with wallet: ${address}`);
@@ -864,13 +874,45 @@ export class SuiAdapter {
         throw new Error(`Invalid escrow object ID: ${escrowId}. Cannot claim from non-existent object.`);
       }
       
+      // Wait for object to become available (blockchain timing issue fix)
+      console.log(`⏳ Waiting for escrow object to become available...`);
+      let objectExists = false;
+      let attempts = 0;
+      const maxAttempts = 10;
+      
+      while (!objectExists && attempts < maxAttempts) {
+        try {
+          await this.client.getObject({ id: escrowObjectId });
+          objectExists = true;
+          console.log(`✅ Escrow object confirmed available after ${attempts + 1} attempts`);
+        } catch (error) {
+          attempts++;
+          if (attempts < maxAttempts) {
+            console.log(`⏳ Object not yet available, waiting... (attempt ${attempts}/${maxAttempts})`);
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+          } else {
+            console.error(`❌ Object ${escrowObjectId} still not available after ${maxAttempts} attempts`);
+            throw new Error(`Escrow object ${escrowObjectId} not available for claiming`);
+          }
+        }
+      }
+      
       console.log(`🔗 Attempting to claim from escrow object: ${escrowObjectId}`);
+      console.log(`🔧 Creating Transaction object...`);
 
       const { Transaction } = require('@mysten/sui/transactions');
       const tx = new Transaction();
+      console.log(`✅ Transaction object created successfully`);
       
-      // Convert secret to bytes
-      const secretBytes = Buffer.from(secret.replace('0x', ''), 'hex');
+      // Convert secret to bytes (handle both with/without 0x prefix)
+      const cleanSecret = secret.startsWith('0x') ? secret.slice(2) : secret;
+      console.log(`🔍 Secret processing: original="${secret}", clean="${cleanSecret}", length=${cleanSecret.length}`);
+      const secretBytes = Buffer.from(cleanSecret, 'hex');
+      console.log(`🔍 Secret bytes: length=${secretBytes.length}, first4=${Array.from(secretBytes.slice(0, 4))}`);
+      
+      // Also convert to array format for BCS
+      const secretArray = Array.from(secretBytes);
+      console.log(`🔍 Secret array: length=${secretArray.length}, first4=[${secretArray.slice(0, 4).join(',')}]`);
       
       // Get shared Clock object
       const clockObjectId = '0x6'; // Standard Sui Clock object
@@ -880,22 +922,33 @@ export class SuiAdapter {
         console.log(`   Package: ${this.packageId}`);
         console.log(`   Escrow Object: ${escrowObjectId}`);
         console.log(`   Secret: ${secret.slice(0, 16)}... (${secretBytes.length} bytes)`);
+        console.log(`🔧 About to call moveCall for withdraw...`);
+        console.log(`🔧 Arguments will be: escrow=${escrowObjectId}, secret=[${secretArray.length} bytes], clock=${clockObjectId}`);
         
         // Call the Sui Move HTLC contract's withdraw function
-        const [claimedCoin] = tx.moveCall({
-          target: `${this.packageId}::escrow::withdraw`,
-          typeArguments: ['0x2::sui::SUI'], // Using SUI coin type
-          arguments: [
-            tx.object(escrowObjectId), // escrow: &mut HTLCEscrow<SUI>
-            tx.pure(secretBytes, 'vector<u8>'), // secret: vector<u8>
-            tx.object(clockObjectId), // clock_obj: &Clock
-          ]
-        });
+        console.log(`🔧 Calling tx.moveCall...`);
+        let claimedCoin;
+        try {
+          claimedCoin = tx.moveCall({
+            target: `${this.packageId}::escrow::withdraw`,
+            typeArguments: ['0x2::sui::SUI'], // Using SUI coin type
+            arguments: [
+              tx.object(escrowObjectId), // escrow: &mut HTLCEscrow<SUI>
+              tx.pure.vector('u8', secretArray), // secret: vector<u8>
+              tx.object(clockObjectId), // clock_obj: &Clock
+            ]
+          })[0];
+          console.log(`✅ moveCall completed successfully`);
+        } catch (moveCallError) {
+          console.error(`❌ Error in moveCall:`, moveCallError);
+          throw moveCallError;
+        }
         
         // Transfer the claimed coin to the receiver
         tx.transferObjects([claimedCoin], tx.pure.address(address));
         
-        console.log(`🔗 Calling Sui Move HTLC withdraw at ${this.packageId}`);
+        console.log(`🔗 About to sign and execute Sui Move HTLC withdraw transaction`);
+        console.log(`🔧 Transaction built successfully, executing...`);
         
         const response = await this.client.signAndExecuteTransaction({
           signer: this.keypair,
@@ -907,8 +960,9 @@ export class SuiAdapter {
           }
         });
         
-        console.log(`✅ REAL Sui HTLC claim successful: ${response.digest}`);
+        console.log(`✅ Transaction executed, digest: ${response.digest}`);
         console.log(`🔍 Transaction status:`, response.effects?.status?.status);
+        console.log(`✅ REAL Sui HTLC claim successful: ${response.digest}`);
         
         return {
           txHash: response.digest,
@@ -917,6 +971,7 @@ export class SuiAdapter {
         };
         
       } catch (contractError) {
+        console.log(`❌ Exception caught in claimHTLC contract call`);
         console.error(`🚫 HTLC contract withdraw failed:`, {
           error: contractError instanceof Error ? contractError.message : String(contractError),
           stack: contractError instanceof Error ? contractError.stack : undefined,
@@ -960,54 +1015,15 @@ export class SuiAdapter {
       }
       
     } catch (error) {
-      console.error('Sui claim transaction error:', error);
-      return {
-        txHash: '',
-        explorerUrl: '',
-        success: false,
-        error: error instanceof Error ? error.message : String(error)
-      };
-    }
-  }
-
-  async claimHTLC(escrowId: string, secret: string): Promise<TransactionResult> {
-    try {
-      const address = this.keypair.toSuiAddress();
-      const { Transaction } = require('@mysten/sui/transactions');
-      const tx = new Transaction();
-      const secretBytes = new Uint8Array(Buffer.from(secret.replace('0x', ''), 'hex'));
-      const clockObjectId = '0x6';
-
-      const [claimedCoin] = tx.moveCall({
-        target: `${this.packageId}::escrow::withdraw`,
-        typeArguments: ['0x2::sui::SUI'],
-        arguments: [
-          tx.object(escrowId),
-          tx.pure(secretBytes),
-          tx.object(clockObjectId),
-        ]
-      });
-
-      tx.transferObjects([claimedCoin], tx.pure.address(address));
-
-      const response = await this.client.signAndExecuteTransaction({
-        signer: this.keypair,
-        transaction: tx,
-        options: {
-          showEffects: true,
-        }
-      });
-
-      if (response.effects?.status?.status !== 'success') {
-        throw new Error(`Sui HTLC withdraw failed: ${response.effects?.status?.error}`);
+      console.log(`❌ OUTER CATCH: Exception caught in claimHTLC`);
+      console.error('❌ OUTER CATCH: Sui claim transaction error:', error);
+      console.error('❌ OUTER CATCH: Error type:', typeof error);
+      console.error('❌ OUTER CATCH: Error instanceof Error:', error instanceof Error);
+      if (error instanceof Error) {
+        console.error('❌ OUTER CATCH: Error message:', error.message);
+        console.error('❌ OUTER CATCH: Error stack:', error.stack);
       }
-
-      return {
-        txHash: response.digest,
-        explorerUrl: `https://testnet.suivision.xyz/txblock/${response.digest}`,
-        success: true
-      };
-    } catch (error) {
+      
       return {
         txHash: '',
         explorerUrl: '',
@@ -1016,6 +1032,8 @@ export class SuiAdapter {
       };
     }
   }
+
+
 
   async getBalance(): Promise<string> {
     try {

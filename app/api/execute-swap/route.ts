@@ -126,9 +126,12 @@ export async function POST(request: NextRequest) {
         
         if (bobDstResult.success) {
           console.log(`✅ Single-wallet: ${swapOrder.dstChain} escrow created: ${bobDstResult.txHash}`);
+          bobUsedContract = bobDstResult.usedContract || false;
+          bobEscrowId = bobDstResult.escrowId || bobDstResult.htlcEscrowId;
+          
           results.push({
             chain: swapOrder.dstChain,
-            type: 'single_wallet_escrow',
+            type: 'bob_escrow',
             txHash: bobDstResult.txHash,
             explorerUrl: bobDstResult.explorerUrl
           });
@@ -178,10 +181,19 @@ export async function POST(request: NextRequest) {
         // Only attempt claim if Bob actually used a contract (not fallback)
         if (bobUsedContract && bobEscrowId) {
           console.log(`🔗 Using real escrow ID: ${bobEscrowId}`);
-          // Choose the right claim method based on destination chain
-          const aliceClaimResult = swapOrder.dstChain === 'base' 
-            ? await (aliceDstAdapter as any).claimHTLC(bobEscrowId, secret)  // Base uses HTLC-style claims
-            : await (aliceDstAdapter as any).claimHTLC(bobEscrowId, secret); // Other chains use HTLC
+          console.log(`🔍 About to call Alice's claimHTLC with secret: ${secret.slice(0, 16)}...`);
+          
+          // Add timeout to prevent hanging
+          const claimPromise = swapOrder.dstChain === 'base' 
+            ? (aliceDstAdapter as any).claimHTLC(bobEscrowId, secret)  // Base uses HTLC-style claims
+            : (aliceDstAdapter as any).claimHTLC(bobEscrowId, secret); // Other chains use HTLC
+          
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Alice claim timeout after 10 seconds')), 10000)
+          );
+          
+          const aliceClaimResult = await Promise.race([claimPromise, timeoutPromise]);
+          console.log(`🔍 Alice's claimHTLC returned:`, aliceClaimResult);
           
           if (aliceClaimResult.success) {
             console.log(`✅ Alice claimed ${swapOrder.dstChain} funds: ${aliceClaimResult.txHash}`);
@@ -191,6 +203,8 @@ export async function POST(request: NextRequest) {
               txHash: aliceClaimResult.txHash,
               explorerUrl: aliceClaimResult.explorerUrl
             });
+          } else {
+            console.log(`❌ Alice's ${swapOrder.dstChain} claim failed:`, aliceClaimResult.error || 'Unknown error');
           }
         } else {
           console.log(`⚠️ Skipping Alice claim - Bob used fallback (no real escrow), bobUsedContract: ${bobUsedContract}, bobEscrowId: ${bobEscrowId}`);
