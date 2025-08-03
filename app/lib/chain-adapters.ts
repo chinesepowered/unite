@@ -813,7 +813,9 @@ export class SuiAdapter {
         
         for (const created of response.effects.created) {
           // Look for shared objects (HTLCEscrow objects are shared)
-          if (created.owner === 'Shared') {
+          // Check both string format and object format: 'Shared' or { Shared: {...} }
+          if (created.owner === 'Shared' || 
+              (created.owner && typeof created.owner === 'object' && 'Shared' in created.owner)) {
             escrowId = created.reference?.objectId;
             console.log(`🔍 Found shared escrow object: ${escrowId}`);
             break;
