@@ -5,7 +5,7 @@ A hackathon project extending 1inch Fusion+ cross-chain swaps to support 3 addit
 ## 🎯 Project Goal
 
 Expand 1inch Cross-chain Swap (Fusion+) to enable swaps between Ethereum and the following chains:
-- ⚡ **Monad** (EVM-compatible)
+- ⚡ **Monad** (EVM-compatible) <--- Supports partial fills!
 - 🔵 **Sui** (Move-based)
 - ✨ **Stellar** (Stellar Consensus Protocol)
 
@@ -55,25 +55,17 @@ cp .env.example .env
 Edit `.env` with your configuration:
 
 ```bash
-# Ethereum Sepolia Testnet
-ETH_RPC_URL=https://sepolia.infura.io/v3/YOUR_INFURA_KEY
-ETH_PRIVATE_KEY=0x... # Your Ethereum private key
-ETH_ESCROW_FACTORY=0x7F3A34991C61963678676f4094596fAcbf7ea3f6 # 1inch factory
-
-# Monad Testnet (EVM-compatible)
-MONAD_RPC_URL=https://testnet-rpc.monad.xyz
-MONAD_PRIVATE_KEY=0x... # Your Monad private key
-
-# Stellar Testnet
-STELLAR_RPC_URL=https://horizon-testnet.stellar.org
-STELLAR_PRIVATE_KEY=S... # Stellar secret key format (starts with S)
-
-# Sui Testnet
-SUI_RPC_URL=https://fullnode.testnet.sui.io:443
-SUI_PRIVATE_KEY=0x... # Sui private key
-
+BASE_PRIVATE_KEY
+BASE_PRIVATE_KEY_2
+STELLAR_PRIVATE_KEY
+STELLAR_PRIVATE_KEY_2
+MONAD_PRIVATE_KEY
+MONAD_PRIVATE_KEY_2
+SUI_PRIVATE_KEY
+SUI_PRIVATE_KEY_2
 
 ```
+These need testnet tokens on each wallet. It's 2 wallets per chain because we need somewhere to swap to and from (doesn't make sense to deposit into itself). The second wallet is the resolver wallet (eg: account1 gives to escrow on source chain, account2 puts into escrow on destination chain, so account1 can claim from escrow on destination chain)
 
 ## 🧪 Testnet Setup Guide
 
