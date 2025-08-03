@@ -243,7 +243,7 @@ export default function DemoPage() {
                 <span>Back to Swap Form</span>
               </a>
               <h1 className="text-3xl font-bold text-white">
-                🚀 Atomic Swap Demo
+                🚀 United Demo
               </h1>
               <p className="text-gray-300 mt-2">
                 Live cross-chain atomic swaps with real blockchain transactions

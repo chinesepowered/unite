@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Fusion+ Multi-Chain | 1inch Hackathon",
+  title: "United | 1inch Hackathon",
   description: "Cross-chain atomic swaps between Ethereum and Monad, Tron, Sui, Stellar",
 };
 

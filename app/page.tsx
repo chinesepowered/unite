@@ -53,7 +53,7 @@ export default function HomePage() {
             <div className="flex items-center space-x-3">
               <Zap className="w-8 h-8" />
               <div>
-                <h1 className="text-3xl font-bold">Fusion+ Multi-Chain</h1>
+                <h1 className="text-3xl font-bold">United</h1>
                 <p className="text-blue-100">Cross-chain atomic swaps powered by HTLC</p>
               </div>
             </div>
@@ -228,7 +228,7 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto text-center">
           <div className="flex items-center justify-center space-x-2 mb-4">
             <Zap className="w-6 h-6" />
-            <span className="text-xl font-bold">Fusion+ Multi-Chain</span>
+            <span className="text-xl font-bold">United</span>
           </div>
           <p className="text-gray-400 mb-4">
             Built for the 1inch Hackathon • Cross-chain atomic swaps with HTLC
