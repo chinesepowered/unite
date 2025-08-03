@@ -578,7 +578,11 @@ export class SuiAdapter {
   async createHTLC(order: SwapOrder): Promise<TransactionResult> {
     try {
       console.log(`🎯 Creating REAL Sui HTLC escrow using Move contract`);
-      console.log(`💰 Sui amount: ${ethers.formatEther(order.dstAmount)} SUI for order ${order.orderId}`);
+      // Determine if this is Base→Sui or Sui→Base swap
+      const isSuiDestination = order.dstChain === 'sui';
+      const suiAmountString = isSuiDestination ? order.dstAmount : order.srcAmount;
+      
+      console.log(`💰 Sui amount: ${Number(suiAmountString) / 1e9} SUI for ${order.srcChain} → ${order.dstChain} swap`);
       
       // Get wallet details
       const address = this.keypair.toSuiAddress();
@@ -632,7 +636,8 @@ export class SuiAdapter {
       const tx = new Transaction();
       
       // Prepare amount in MIST (Sui's smallest unit: 1 SUI = 1e9 MIST)
-      const amountInMist = Number(order.dstAmount);
+      // Use correct amount based on swap direction
+      const amountInMist = Number(suiAmountString);
       console.log(`💰 HTLC amount: ${amountInMist} MIST (${amountInMist / 1e9} SUI)`);
       
       // Split coins for the HTLC escrow
