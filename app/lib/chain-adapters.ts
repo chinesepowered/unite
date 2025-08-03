@@ -641,7 +641,7 @@ export class SuiAdapter {
       // Get shared Clock object (standard Sui system object)
       const clockObjectId = '0x6'; // Standard Sui Clock object
       
-      // Convert secret hash from hex to bytes
+      // Convert secret hash from hex to bytes for BCS encoding
       const secretHashHex = order.secretHash.replace('0x', '');
       const secretHashBytes = Buffer.from(secretHashHex, 'hex');
       
@@ -664,7 +664,7 @@ export class SuiAdapter {
           arguments: [
             htlcCoin,
             tx.pure.address(receiverAddress),
-            tx.pure(secretHashBytes, 'vector<u8>'),
+            tx.pure.vector('u8', Array.from(secretHashBytes)),
             tx.pure.u64(timelock),
             tx.pure.string(order.orderId),
             tx.object(clockObjectId)
