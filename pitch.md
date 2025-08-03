@@ -98,12 +98,6 @@ npm install && npm run dev
 
 ## 📈 **Business Impact**
 
-### 💰 **Value Unlocked**
-- **$10B+** Total addressable market across supported chains
-- **Zero counterparty risk** atomic swaps
-- **Native 1inch UX** = instant user adoption
-- **First-mover advantage** in emerging ecosystems
-
 ### 🎯 **Target Users**
 - **🐋 DeFi Whales**: Moving large amounts safely
 - **🏦 Institutions**: Regulatory-compliant atomic transfers  
@@ -139,16 +133,6 @@ npm install && npm run dev
 
 ### 💎 **Long-term Vision**
 **United becomes the universal bridge for 1inch** - enabling swaps between ANY blockchain pair through a unified, secure, atomic protocol.
-
----
-
-## 🤝 **The Team**
-
-**Experienced blockchain developers** with deep expertise in:
-- 🔧 **Smart Contract Development** (Solidity, Move, Rust)
-- 🔗 **Cross-chain Protocols** (HTLC, Atomic Swaps)  
-- 🎨 **Frontend Development** (React, TypeScript)
-- 🛡️ **Security Engineering** (Audits, Formal Verification)
 
 ---
 
