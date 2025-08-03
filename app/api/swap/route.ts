@@ -20,8 +20,18 @@ export async function POST(request: NextRequest) {
     // Generate real HTLC parameters
     const orderId = '0x' + randomBytes(16).toString('hex');
     const secret = randomBytes(32).toString('hex');
-    // Hash the secret using keccak256 of raw bytes to match Sui Move's hash::keccak256(&secret)
-    const secretHash = ethers.keccak256('0x' + secret);
+    
+    // Chain-specific secret hashing:
+    // - Sui Move: hash::keccak256(&secret) expects raw bytes -> keccak256('0x' + secret)
+    // - EVM (Monad/Base): keccak256(abi.encodePacked(secret)) expects string -> keccak256(toUtf8Bytes(secret))
+    let secretHash: string;
+    if (srcChain === 'sui' || dstChain === 'sui') {
+      // Sui in the swap: use hex bytes hashing
+      secretHash = ethers.keccak256('0x' + secret);
+    } else {
+      // EVM-only swap: use string hashing to match Solidity abi.encodePacked(string)
+      secretHash = ethers.keccak256(ethers.toUtf8Bytes(secret));
+    }
     
     const currentTime = Math.floor(Date.now() / 1000);
     
